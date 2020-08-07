@@ -6,15 +6,15 @@ data template_file consul_onboard {
 
   vars = {
     CONSUL_VERSION = "1.7.2"
-    zone = var.gcpZone
-    project = var.gcpProjectId
+    zone           = var.gcpZone
+    project        = var.gcpProjectId
   }
 }
 
 resource google_compute_instance_template consul-template {
-  name_prefix = "consul-template-"
-  description = "This template is used to create runner server instances."
-  tags = ["consul-demo"]
+  name_prefix          = "consul-template-"
+  description          = "This template is used to create runner server instances."
+  tags                 = ["consul-demo"]
   instance_description = "consul"
   machine_type         = "n1-standard-4"
   can_ip_forward       = false
