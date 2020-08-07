@@ -43,7 +43,7 @@ resource google_compute_instance_template nginx-template {
 # instance group
 
 resource google_compute_instance_group_manager nginx-group {
-  name               = "${var.projectPrefix}-nginx-instance-group-manager-${random_pet.buildSuffix.id}"
+  name               = "${var.projectPrefix}-nginx-instance-group-manager"
   base_instance_name = "nginx"
   zone               = var.gcpZone
   target_size        = 1

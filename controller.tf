@@ -44,7 +44,7 @@ resource google_compute_instance_template controller-template {
 # instance group
 
 resource google_compute_instance_group_manager controller-group {
-  name               = "${var.projectPrefix}-controller-instance-group-manager-${random_pet.buildSuffix.id}"
+  name               = "${var.projectPrefix}-controller-instance-group-manager"
   base_instance_name = "controller"
   zone               = var.gcpZone
   target_size        = 1
