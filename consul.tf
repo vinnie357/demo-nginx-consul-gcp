@@ -48,7 +48,7 @@ resource google_compute_instance_template consul-template {
 
 resource google_compute_instance_group_manager consul-group {
   name               = "${var.projectPrefix}-consul-instance-group-manager"
-  base_instance_name = "consul"
+  base_instance_name = "${var.projectPrefix}-consul"
   zone               = var.gcpZone
   target_size        = 3
   version {
