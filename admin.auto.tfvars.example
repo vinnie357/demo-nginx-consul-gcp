@@ -1,0 +1,9 @@
+projectPrefix = "demonginx"
+gcpProjectId  = "myprojectid"
+gcpRegion     = "us-east1"
+gcpZone       = "us-east1-b"
+nginxKey      = "198rt9de8fu"
+nginxCert     = "fdsfjsakdf"
+adminAccount  = "notadmin"
+adminPass     = "pleaseusevault"
+adminSrcAddr  = ["192.168.1.2/32", "102.67.2.5/32"]
