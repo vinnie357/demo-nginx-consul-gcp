@@ -22,7 +22,8 @@ resource google_compute_instance_template nginx-template {
     type         = "pd-ssd"
   }
   network_interface {
-    network = google_compute_network.vpc_network.id
+    network    = google_compute_network.vpc_network.id
+    subnetwork = google_compute_subnetwork.vpc_network_sub.id
     access_config {
     }
   }
