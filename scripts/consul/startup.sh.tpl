@@ -92,13 +92,13 @@ cat << EOF > /etc/consul.d/client.hcl
 bind_addr = "$${local_ipv4}"
 advertise_addr = "$${local_ipv4}"
 client_addr = "0.0.0.0"
-retry_join = ["provider=gce tag_name=environment tag_value=f5env tenant_id=1 client_id=1 subscription_id=1 secret_access_key=123"]
+retry_join = ["provider=gce tag_value=consul-demo project_name=${project} zone_pattern=${zone}"]
 EOF
 cat << EOF > /etc/consul.d/server.hcl
 server = true
 bootstrap_expect = 1
 client_addr = "0.0.0.0"
-retry_join = ["provider=gce tag_value=f5env project_name=1234 zone_pattern=123 credentials_file=1234"]
+retry_join = ["provider=gce tag_value=consul-demo project_name=${project} zone_pattern=${zone}"]
 EOF
 #Enable the service
 sudo systemctl enable consul
