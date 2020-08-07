@@ -9,8 +9,8 @@ resource google_container_cluster primary {
   ip_allocation_policy {}
   remove_default_node_pool = true
   initial_node_count       = 1
-  network                  = google_compute_network.vpc_network
-  subnetwork               = google_compute_subnetwork.vpc_network_sub
+  network                  = google_compute_network.vpc_network.id
+  subnetwork               = google_compute_subnetwork.vpc_network_sub.id
   master_auth {
     username = var.adminAccount
     password = var.adminPass

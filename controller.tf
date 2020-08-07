@@ -23,7 +23,7 @@ resource google_compute_instance_template controller-template {
     type         = "pd-ssd"
   }
   network_interface {
-    network = google_compute_network.vpc_network
+    network = google_compute_network.vpc_network.id
     access_config {
     }
   }
