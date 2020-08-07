@@ -36,3 +36,18 @@ resource google_compute_firewall mgmt {
 
   source_ranges = var.adminSrcAddr
 }
+resource google_compute_firewall iap-ingress {
+  name    = "${var.projectPrefix}-iap-firewall${random_pet.buildSuffix.id}"
+  network = google_compute_network.vpc_network.name
+
+  allow {
+    protocol = "tcp"
+  }
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22", "443", "80"]
+  }
+
+  source_ranges = ["35.235.240.0/20"]
+}
