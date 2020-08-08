@@ -31,7 +31,7 @@ resource google_compute_firewall mgmt {
 
   allow {
     protocol = "tcp"
-    ports    = ["22", "443", "80"]
+    ports    = ["22", "443", "80","8500"]
   }
 
   source_ranges = var.adminSrcAddr
@@ -46,7 +46,7 @@ resource google_compute_firewall iap-ingress {
 
   allow {
     protocol = "tcp"
-    ports    = ["22", "443", "80","8500"]
+    ports    = ["22", "443", "80"]
   }
 
   source_ranges = ["35.235.240.0/20"]
