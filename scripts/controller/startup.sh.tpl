@@ -35,6 +35,7 @@ EOF
 sudo docker-compose up -d
 
 # install controller
+sudo apt-get install jq -y
 token=$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token' -H 'Metadata-Flavor: Google' | jq -r .access_token )
 url="https://storage.googleapis.com/storage/v1/b/controller-demo/o/controller-installer-3.7.0.tar.gz?alt=media"
 name=$(basename $url )
@@ -45,7 +46,7 @@ curl -Lsk -H "Metadata-Flavor: Google" -H "Authorization: Bearer $token" $url -o
 tar xzf /$file
 cd controller-installer
 local_ipv4="$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip' -H 'Metadata-Flavor: Google')"
-#echo "$${local_ipv4} 5432 naas naaspassword naaspassword local " | ./install.sh
+echo "$${local_ipv4} 5432 naas naaspassword naaspassword local q y $${local_ipv4} 25 n n 'noreply@example.com' $${local_ipv4} Nginx Admin Nginx admin@nginx-gcp.internal 'admin123!' 'admin123!' y" | ./install.sh
 
 #vars:
 #    - ctrl_tarball_src: "{{ctrl_install_path}}/{{controller_tarball}}"
@@ -67,7 +68,7 @@ local_ipv4="$(curl -s -f --retry 20 'http://metadata.google.internal/computeMeta
 #    - organization_name: "Nginx"
 #    - admin_firstname: "Admin"
 #    - admin_lastname: "Nginx"
-#    - admin_email: "admin@nginx-udf.internal"
+#    - admin_email: "admin@nginx-gcp.internal"
 #    - admin_password: 'admin123!'
 #    - self_signed_cert: true
 #    - overwrite_existing_configs: true
