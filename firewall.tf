@@ -31,7 +31,7 @@ resource google_compute_firewall mgmt {
 
   allow {
     protocol = "tcp"
-    ports    = ["22", "443", "80","8500"]
+    ports    = ["22", "443", "80", "8500"]
   }
 
   source_ranges = var.adminSrcAddr
