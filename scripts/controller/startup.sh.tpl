@@ -2,7 +2,7 @@
 
 # install packages
 
-sudo apt get install gettext bash jq gzip coreutils grep less sed tar python-pexpect socat conntrack -y
+sudo apt-get install gettext bash jq gzip coreutils grep less sed tar python-pexpect socat conntrack -y
 
 # install docker
 curl -fsSL https://get.docker.com -o get-docker.sh
@@ -21,7 +21,7 @@ services:
     ports:
     - "5432:5432"
     restart: always
-    env:
+    environment:
       POSTGRES_USER: "naas"
       POSTGRES_PASSWORD: "naaspassword"
       POSTGRES_DB: "naas"
@@ -34,7 +34,19 @@ services:
 EOF
 sudo docker-compose up -d
 
-# install controller   
+# install controller
+token=$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token' -H 'Metadata-Flavor: Google' | jq -r .access_token )
+url="https://storage.googleapis.com/storage/v1/b/controller-demo/o/controller-installer-3.7.0.tar.gz?alt=media"
+name=$(basename $url )
+file=${name}
+file=${file%"?alt=media"}
+echo "${file}"
+curl -Lsk -H "Metadata-Flavor: Google" -H "Authorization: Bearer $token" $url -o /$file
+tar xzf /$file
+cd controller-installer
+local_ipv4="$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip' -H 'Metadata-Flavor: Google')"
+#echo "${local_ipv4} 5432 naas naaspassword naaspassword local " | ./install.sh
+
 #vars:
 #    - ctrl_tarball_src: "{{ctrl_install_path}}/{{controller_tarball}}"
 #    - ctrl_install_path: /home/ubuntu

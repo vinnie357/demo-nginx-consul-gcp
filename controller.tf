@@ -21,6 +21,7 @@ resource google_compute_instance_template controller-template {
     auto_delete  = true
     boot         = true
     type         = "pd-ssd"
+    disk_size_gb = 40
   }
   network_interface {
     network    = google_compute_network.vpc_network.id
