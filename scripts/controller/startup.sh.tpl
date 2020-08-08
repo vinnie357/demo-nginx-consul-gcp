@@ -38,14 +38,14 @@ sudo docker-compose up -d
 token=$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token' -H 'Metadata-Flavor: Google' | jq -r .access_token )
 url="https://storage.googleapis.com/storage/v1/b/controller-demo/o/controller-installer-3.7.0.tar.gz?alt=media"
 name=$(basename $url )
-file=${name}
-file=${file%"?alt=media"}
-echo "${file}"
+file=$${name}
+file=$${file%"?alt=media"}
+echo "$${file}"
 curl -Lsk -H "Metadata-Flavor: Google" -H "Authorization: Bearer $token" $url -o /$file
 tar xzf /$file
 cd controller-installer
 local_ipv4="$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip' -H 'Metadata-Flavor: Google')"
-#echo "${local_ipv4} 5432 naas naaspassword naaspassword local " | ./install.sh
+#echo "$${local_ipv4} 5432 naas naaspassword naaspassword local " | ./install.sh
 
 #vars:
 #    - ctrl_tarball_src: "{{ctrl_install_path}}/{{controller_tarball}}"
