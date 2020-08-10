@@ -52,5 +52,8 @@ resource google_compute_instance_group_manager controller-group {
   version {
     instance_template = google_compute_instance_template.controller-template.id
   }
-
+  # wait for gke cluster
+  timeouts {
+    create = 10
+  }
 }

@@ -54,5 +54,8 @@ resource google_compute_instance_group_manager consul-group {
   version {
     instance_template = google_compute_instance_template.consul-template.id
   }
-
+  # wait for gke cluster
+  timeouts {
+    create = 10
+  }
 }
