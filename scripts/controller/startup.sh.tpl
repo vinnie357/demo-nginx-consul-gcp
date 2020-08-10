@@ -59,7 +59,7 @@ sudo adduser \
    --disabled-password \
    --home /home/controller \
    controller
-sudo usermod -aG sudo controller
+sudo usermod -aG sudo,adm controller
 sudo mkdir -p /root
 sudo chown controller: /root
 echo 'controller ALL=(ALL:ALL) NOPASSWD: ALL' | sudo EDITOR='tee -a' visudo
