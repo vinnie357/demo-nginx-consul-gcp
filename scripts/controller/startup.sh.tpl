@@ -51,7 +51,8 @@ cd controller-installer
 # svcacct_token=$(curl -s -f --retry 20 "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" -H "Metadata-Flavor: Google" | jq -r ".access_token")
 # passwd=$(curl -s -f --retry 20 "https://secretmanager.googleapis.com/v1/projects/$projectId/secrets/$usecret/versions/1:access" -H "Authorization: Bearer $svcacct_token" | jq -r ".payload.data" | base64 --decode)
 
-
+# force user
+sudo sed -i "s/\$HOME/controller/g" /controller-installer/k8s-install.sh
 # create controller user
 sudo adduser \
    --system \
@@ -59,7 +60,7 @@ sudo adduser \
    --disabled-password \
    --home /home/controller \
    controller
-sudo usermod -aG sudo,adm controller
+sudo usermod -aG sudo,adm,docker controller
 sudo mkdir -p /root
 sudo chown controller: /root
 echo 'controller ALL=(ALL:ALL) NOPASSWD: ALL' | sudo EDITOR='tee -a' visudo
