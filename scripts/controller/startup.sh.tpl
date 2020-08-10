@@ -46,7 +46,7 @@ curl -Lsk -H "Metadata-Flavor: Google" -H "Authorization: Bearer $token" $url -o
 tar xzf /$file
 cd controller-installer
 local_ipv4="$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip' -H 'Metadata-Flavor: Google')"
-echo "$${local_ipv4} 5432 naas naaspassword naaspassword local q y $${local_ipv4} 25 n n 'noreply@example.com' $${local_ipv4} Nginx Admin Nginx admin@nginx-gcp.internal 'admin123!' 'admin123!' y" | ./install.sh
+echo "$${local_ipv4} 5432 naas naaspassword naaspassword local q y $${local_ipv4} 2587 n n 'noreply@example.com' $${local_ipv4} Nginx Admin Nginx admin@nginx-gcp.internal 'admin123!' 'admin123!' y" | ./install.sh
 
 #vars:
 #    - ctrl_tarball_src: "{{ctrl_install_path}}/{{controller_tarball}}"
