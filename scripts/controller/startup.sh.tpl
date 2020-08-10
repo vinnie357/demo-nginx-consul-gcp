@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # install packages
-
+sudo apt-get update
 sudo apt-get install gettext bash jq gzip coreutils grep less sed tar python-pexpect socat conntrack -y
 
 # install docker
@@ -34,7 +34,6 @@ EOF
 sudo docker-compose up -d
 
 # install controller
-sudo apt-get install jq -y
 token=$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token' -H 'Metadata-Flavor: Google' | jq -r .access_token )
 url="https://storage.googleapis.com/storage/v1/b/controller-demo/o/controller-installer-3.7.0.tar.gz?alt=media"
 name=$(basename $url )
