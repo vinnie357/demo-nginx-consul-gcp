@@ -45,8 +45,34 @@ curl -Lsk -H "Metadata-Flavor: Google" -H "Authorization: Bearer $token" $url -o
 tar xzf /$file
 cd controller-installer
 local_ipv4="$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip' -H 'Metadata-Flavor: Google')"
+
+# # Credentials
+# echo "Retrieving password from Metadata secret"
+# svcacct_token=$(curl -s -f --retry 20 "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" -H "Metadata-Flavor: Google" | jq -r ".access_token")
+# passwd=$(curl -s -f --retry 20 "https://secretmanager.googleapis.com/v1/projects/$projectId/secrets/$usecret/versions/1:access" -H "Authorization: Bearer $svcacct_token" | jq -r ".payload.data" | base64 --decode)
+
 pw="admin123!"
-echo "$${local_ipv4} 5432 naas naaspassword naaspassword local q y $${local_ipv4} 2587 n n 'noreply@example.com' $${local_ipv4} Nginx Admin Nginx admin@nginx-gcp.internal $${pw} $${pw} y" | ./install.sh
+
+./install.sh \
+--non-interactive \
+--accept-license \
+--self-signed-cert \
+--db-host $${local_ipv4} \
+--db-port 5432 \
+--db-user naas \
+--db-pass naaspassword \
+--smtp-host $${local_ipv4} \
+--smtp-port 2587 \
+--smtp-authentication false \
+--smtp-use-tls false \
+--noreply-address noreply@example.com \
+--admin-email admin@nginx-gcp.internal \
+--admin-password $${pw} \
+--fqdn $${local_ipv4} \
+--admin-firstname Admin \
+--admin-lastname Nginx \
+--tsdb-volume-type local \
+--organization-name F5 
 
 #vars:
 #    - ctrl_tarball_src: "{{ctrl_install_path}}/{{controller_tarball}}"
