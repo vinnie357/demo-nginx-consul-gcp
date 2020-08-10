@@ -56,6 +56,6 @@ resource google_compute_instance_group_manager consul-group {
   }
   # wait for gke cluster
   timeouts {
-    create = 10
+    create = "10m"
   }
 }
