@@ -78,7 +78,7 @@ sudo su - controller -p -c "cd /controller-installer/ && \
 --smtp-use-tls false \
 --noreply-address noreply@example.com \
 --admin-email admin@nginx-gcp.internal \
---admin-password ${pw} \
+--admin-password $${pw} \
 --fqdn $${local_ipv4} \
 --admin-firstname Admin \
 --admin-lastname Nginx \
