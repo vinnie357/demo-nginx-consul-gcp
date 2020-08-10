@@ -43,15 +43,27 @@ echo "$${file}"
 curl -Lsk -H "Metadata-Flavor: Google" -H "Authorization: Bearer $token" $url -o /$file
 tar xzf /$file
 cd controller-installer
-local_ipv4="$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip' -H 'Metadata-Flavor: Google')"
+#local_ipv4="$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip' -H 'Metadata-Flavor: Google')"
 
 # # Credentials
 # echo "Retrieving password from Metadata secret"
 # svcacct_token=$(curl -s -f --retry 20 "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" -H "Metadata-Flavor: Google" | jq -r ".access_token")
 # passwd=$(curl -s -f --retry 20 "https://secretmanager.googleapis.com/v1/projects/$projectId/secrets/$usecret/versions/1:access" -H "Authorization: Bearer $svcacct_token" | jq -r ".payload.data" | base64 --decode)
 
+
+#
+sudo adduser \
+   --system \
+   --shell /bin/bash \
+   --disabled-password \
+   --home /home/controller \
+   controller
+sudo usermod -aG sudo controller
+
+local_ipv4="$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip' -H 'Metadata-Flavor: Google')"
 pw="admin123!"
 
+sudo su - controller -p -c "cd /controller-installer/ && \
 ./install.sh \
 --non-interactive \
 --accept-license \
@@ -66,12 +78,15 @@ pw="admin123!"
 --smtp-use-tls false \
 --noreply-address noreply@example.com \
 --admin-email admin@nginx-gcp.internal \
---admin-password $${pw} \
+--admin-password ${pw} \
 --fqdn $${local_ipv4} \
 --admin-firstname Admin \
 --admin-lastname Nginx \
 --tsdb-volume-type local \
---organization-name F5 
+--organization-name F5"
+#
+exit 
+echo "done"
 
 #vars:
 #    - ctrl_tarball_src: "{{ctrl_install_path}}/{{controller_tarball}}"
