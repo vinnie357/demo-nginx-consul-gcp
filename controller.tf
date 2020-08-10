@@ -45,6 +45,7 @@ resource google_compute_instance_template controller-template {
 # instance group
 
 resource google_compute_instance_group_manager controller-group {
+  depends_on         = [google_container_cluster.primary]
   name               = "${var.projectPrefix}-controller-instance-group-manager"
   base_instance_name = "${var.projectPrefix}-controller"
   zone               = var.gcpZone
@@ -54,6 +55,6 @@ resource google_compute_instance_group_manager controller-group {
   }
   # wait for gke cluster
   timeouts {
-    create = "10m"
+    create = "15m"
   }
 }

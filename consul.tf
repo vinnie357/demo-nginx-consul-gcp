@@ -47,6 +47,7 @@ resource google_compute_instance_template consul-template {
 # instance group
 
 resource google_compute_instance_group_manager consul-group {
+  depends_on         = [google_container_cluster.primary]
   name               = "${var.projectPrefix}-consul-instance-group-manager"
   base_instance_name = "${var.projectPrefix}-consul"
   zone               = var.gcpZone
@@ -56,6 +57,6 @@ resource google_compute_instance_group_manager consul-group {
   }
   # wait for gke cluster
   timeouts {
-    create = "10m"
+    create = "15m"
   }
 }
