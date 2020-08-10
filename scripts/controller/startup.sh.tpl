@@ -1,4 +1,5 @@
 #!/bin/bash
+touch /status.log
 
 # install packages
 sudo apt-get update
@@ -51,7 +52,7 @@ cd controller-installer
 # passwd=$(curl -s -f --retry 20 "https://secretmanager.googleapis.com/v1/projects/$projectId/secrets/$usecret/versions/1:access" -H "Authorization: Bearer $svcacct_token" | jq -r ".payload.data" | base64 --decode)
 
 
-#
+# create controller user
 sudo adduser \
    --system \
    --shell /bin/bash \
@@ -59,11 +60,15 @@ sudo adduser \
    --home /home/controller \
    controller
 sudo usermod -aG sudo controller
-
+sudo mkdir -p /root
+sudo chown controller: /root
+echo 'controller ALL=(ALL:ALL) NOPASSWD: ALL' | sudo EDITOR='tee -a' visudo
+# set vars
 local_ipv4="$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip' -H 'Metadata-Flavor: Google')"
 pw="admin123!"
-
-sudo su - controller -p -c "cd /controller-installer/ && \
+# start install
+echo "installing" >> /status.log
+su - controller -p -c "cd /controller-installer/ && \
 ./install.sh \
 --non-interactive \
 --accept-license \
@@ -84,9 +89,10 @@ sudo su - controller -p -c "cd /controller-installer/ && \
 --admin-lastname Nginx \
 --tsdb-volume-type local \
 --organization-name F5"
-#
-exit 
-echo "done"
+#remove rights
+sed -i "s/controller ALL=(ALL:ALL) NOPASSWD: ALL//g" /etc/sudoers
+echo "done" >> /status.log
+exit
 
 #vars:
 #    - ctrl_tarball_src: "{{ctrl_install_path}}/{{controller_tarball}}"
