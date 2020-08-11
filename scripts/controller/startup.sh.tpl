@@ -1,17 +1,27 @@
 #!/bin/bash
 touch /status.log
-
+echo "starting" >> /status.log
 # install packages
-sudo apt-get update
-sudo apt-get install gettext bash jq gzip coreutils grep less sed tar python-pexpect socat conntrack -y
-
+apt-get update
+apt-get install gettext bash jq gzip coreutils grep less sed tar python-pexpect socat conntrack -y
+# docker settings
+cat << EOF > /etc/docker/daemon.json
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2"
+}
+EOF
 # install docker
 curl -fsSL https://get.docker.com -o get-docker.sh
 sh get-docker.sh
 rm get-docker.sh
 # install compose
-sudo curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
 #Run  services for controller
 sleep 10
 cat << EOF > docker-compose.yml
@@ -32,8 +42,8 @@ services:
     - "2587:25"
     restart: always
 EOF
-sudo docker-compose up -d
-
+docker-compose up -d
+echo "docker done" >> /status.log
 # install controller
 token=$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token' -H 'Metadata-Flavor: Google' | jq -r .access_token )
 url="https://storage.googleapis.com/storage/v1/b/controller-demo/o/controller-installer-3.7.0.tar.gz?alt=media"
@@ -45,53 +55,70 @@ curl -Lsk -H "Metadata-Flavor: Google" -H "Authorization: Bearer $token" $url -o
 tar xzf /$file
 cd controller-installer
 #local_ipv4="$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip' -H 'Metadata-Flavor: Google')"
+echo "controller dowloaded" >> /status.log
+# k8s dependencies 
+KUBE_VERSION=1.15.5
+packages=(
+    "kubeadm=$${KUBE_VERSION}-00"
+    "kubelet=$${KUBE_VERSION}-00"
+    "kubectl=$${KUBE_VERSION}-00"
+)
+apt-get update -qq && apt-get install -qq -y apt-transport-https curl gnupg2 >/dev/null
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | tee -a /etc/apt/sources.list.d/kubernetes.list >/dev/null
+apt-get update -qq
 
+echo ""
+echo "Fetch the following files:"
+apt-get install --reinstall --print-uris -qq "$${packages[@]}" | cut -d"'" -f2
+
+echo ""
+echo "Install packages:"
+echo "dpkg -i *.deb"
+echo "k8s deps done" >> /status.log
 # # Credentials
 # echo "Retrieving password from Metadata secret"
 # svcacct_token=$(curl -s -f --retry 20 "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" -H "Metadata-Flavor: Google" | jq -r ".access_token")
 # passwd=$(curl -s -f --retry 20 "https://secretmanager.googleapis.com/v1/projects/$projectId/secrets/$usecret/versions/1:access" -H "Authorization: Bearer $svcacct_token" | jq -r ".payload.data" | base64 --decode)
 
-# force user
-sudo sed -i "s/\$HOME/controller/g" /controller-installer/k8s-install.sh
+echo "creating user" >> /status.log
 # create controller user
-sudo adduser \
-   --system \
-   --shell /bin/bash \
-   --disabled-password \
-   --home /home/controller \
-   controller
-sudo usermod -aG sudo,adm,docker controller
-sudo mkdir -p /root
-sudo chown controller: /root
-echo 'controller ALL=(ALL:ALL) NOPASSWD: ALL' | sudo EDITOR='tee -a' visudo
+adduser controller
+usermod -aG sudo,adm,docker controller
+echo 'controller ALL=(ALL:ALL) NOPASSWD: ALL' | EDITOR='tee -a' visudo
+# start install
+echo "installing controller" >> /status.log
+sudo tee /retry.sh <<EOF
 # set vars
 local_ipv4="$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip' -H 'Metadata-Flavor: Google')"
 pw="admin123!"
-# start install
-echo "installing" >> /status.log
-su - controller -p -c "cd /controller-installer/ && \
+cd /controller-installer/
 ./install.sh \
 --non-interactive \
 --accept-license \
 --self-signed-cert \
---db-host $${local_ipv4} \
+--db-host "\$local_ipv4" \
 --db-port 5432 \
 --db-user naas \
 --db-pass naaspassword \
---smtp-host $${local_ipv4} \
+--smtp-host "\$local_ipv4" \
 --smtp-port 2587 \
 --smtp-authentication false \
 --smtp-use-tls false \
 --noreply-address noreply@example.com \
 --admin-email admin@nginx-gcp.internal \
---admin-password $${pw} \
---fqdn $${local_ipv4} \
+--admin-password "\$pw" \
+--fqdn "\$local_ipv4" \
 --admin-firstname Admin \
 --admin-lastname Nginx \
 --tsdb-volume-type local \
---organization-name F5"
+--organization-name F5
+EOF
+chmod +x /retry.sh
+su - controller -c "/retry.sh"
 #remove rights
 sed -i "s/controller ALL=(ALL:ALL) NOPASSWD: ALL//g" /etc/sudoers
+rm /retry.sh
 echo "done" >> /status.log
 exit
 
