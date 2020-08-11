@@ -40,3 +40,7 @@ variable nginxCert {
   description = "cert for nginxplus"
 }
 # controller
+variable controllerLicense {
+  description = "license for controller"
+  default     = "none"
+}

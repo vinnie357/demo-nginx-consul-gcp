@@ -37,7 +37,7 @@ resource google_compute_instance_template controller-template {
     #shutdown-script = "${file("${path.module}/scripts/controller/shutdown.sh")}"
   }
   service_account {
-    #email  = google_service_account.gce-controller-sa.email
+    email  = google_service_account.gce-controller-sa.email
     scopes = ["cloud-platform"]
   }
 }

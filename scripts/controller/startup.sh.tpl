@@ -5,6 +5,7 @@ echo "starting" >> /status.log
 apt-get update
 apt-get install gettext bash jq gzip coreutils grep less sed tar python-pexpect socat conntrack -y
 # docker settings
+mkdir -p /etc/docker
 cat << EOF > /etc/docker/daemon.json
 {
   "exec-opts": ["native.cgroupdriver=systemd"],
@@ -119,6 +120,55 @@ su - controller -c "/retry.sh"
 #remove rights
 sed -i "s/controller ALL=(ALL:ALL) NOPASSWD: ALL//g" /etc/sudoers
 rm /retry.sh
+# licence
+# access secret from secretsmanager
+secrets=$(gcloud secrets versions access latest --secret="controller-secret")
+# install cert key
+echo "setting info from Metadata secret"
+# license
+cat << EOF > /controller_license.txt
+$(echo $secrets | jq -r .license)
+EOF
+## payloads
+payloadLicense=$(cat -<<EOF
+{
+  "content": "$(cat /controller_license.txt)"
+}
+EOF
+)
+payload=$(cat -<<EOF
+{
+  "credentials": {
+        "type": "BASIC",
+        "username": "admin@nginx-gcp.internal",
+        "password": "admin123!"
+  }
+}
+EOF
+)
+function license() {
+    # Check api Ready
+    ip="$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip' -H 'Metadata-Flavor: Google')"
+    version="api/v1"
+    loginUrl="/platform/login"
+    count=0
+    while [ $count -le 10 ]
+    do
+    status=$(curl -ksi https://$ip/$version$loginUrl  | grep HTTP | awk '{print $2}')
+    if [[ $status == "401" ]]; then
+        curl -sk --header "Content-Type:application/json"  --data "$payload" --url https://$ip/$version$loginUrl --dump-header /cookie.txt
+        cookie=$(cat /cookie.txt | grep Set-Cookie: | awk '{print $2}')
+        rm /cookie.txt
+        curl -sk --header "Content-Type:application/json" --header "Cookie: $cookie" --data "$payloadLicense" --url https://$ip/$version/platform/license-file
+        break
+    else
+        echo "Status $status"
+        count=$[$count+1]
+    fi
+    sleep 60
+    done
+}
+license
 echo "done" >> /status.log
 exit
 

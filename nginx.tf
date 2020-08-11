@@ -35,7 +35,7 @@ resource google_compute_instance_template nginx-template {
     #shutdown-script = "${file("${path.module}/scripts/nginx/shutdown.sh")}"
   }
   service_account {
-    #email  = google_service_account.gce-nginx-sa.email
+    email  = google_service_account.gce-nginx-sa.email
     scopes = ["cloud-platform"]
   }
 }
@@ -43,7 +43,7 @@ resource google_compute_instance_template nginx-template {
 # instance group
 
 resource google_compute_instance_group_manager nginx-group {
-  depends_on         = [google_container_cluster.primary]
+  depends_on         = [google_container_cluster.primary, google_compute_instance_group_manager.controller-group]
   name               = "${var.projectPrefix}-nginx-instance-group-manager"
   base_instance_name = "${var.projectPrefix}-nginx"
   zone               = var.gcpZone
