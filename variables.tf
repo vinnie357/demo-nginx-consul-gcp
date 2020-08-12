@@ -22,7 +22,7 @@ variable gcpProjectId {
   description = "gcp project id"
 }
 variable gkeVersion {
-  default = "1.16.9-gke.6"
+  default = "1.17.9-gke.600"
 }
 
 variable podCidr {
