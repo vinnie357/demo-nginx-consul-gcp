@@ -21,8 +21,9 @@ variable gcpRegion {
 variable gcpProjectId {
   description = "gcp project id"
 }
+#https://cloud.google.com/kubernetes-engine/docs/release-notes-regular
 variable gkeVersion {
-  default = "1.17.9-gke.600"
+  default = "1.16.3-gke.5"
 }
 
 variable podCidr {
