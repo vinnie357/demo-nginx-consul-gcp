@@ -3,7 +3,8 @@ data template_file controller_onboard {
   template = file("${path.module}/scripts/controller/startup.sh.tpl")
 
   vars = {
-    MYVAR = "12134"
+    bucket         = var.controllerBucket
+    serviceAccount = google_service_account.gce-controller-sa.email
   }
 }
 

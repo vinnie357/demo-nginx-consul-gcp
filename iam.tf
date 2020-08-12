@@ -9,6 +9,11 @@ resource google_secret_manager_secret_iam_member gce-nginx-sa-iam {
   role       = "roles/secretmanager.secretAccessor"
   member     = "serviceAccount:${google_service_account.gce-nginx-sa.email}"
 }
+resource google_project_iam_member project {
+  project = var.gcpProjectId
+  role    = "roles/compute.networkViewer"
+  member  = "serviceAccount:${google_service_account.gce-nginx-sa.email}"
+}
 
 resource google_service_account gce-controller-sa {
   account_id   = "gce-controller-sa"
@@ -20,4 +25,12 @@ resource google_secret_manager_secret_iam_member gce-controller-sa-iam {
   secret_id  = google_secret_manager_secret.controller-secret.secret_id
   role       = "roles/secretmanager.secretAccessor"
   member     = "serviceAccount:${google_service_account.gce-controller-sa.email}"
+}
+
+resource google_storage_bucket_iam_binding binding {
+  bucket = var.controllerBucket
+  role   = "roles/storage.objectViewer"
+  members = [
+    "serviceAccount:${google_service_account.gce-controller-sa.email}"
+  ]
 }

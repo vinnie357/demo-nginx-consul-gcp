@@ -43,7 +43,7 @@ resource google_secret_manager_secret_version controller-secret {
   secret      = google_secret_manager_secret.controller-secret.id
   secret_data = <<-EOF
   {
-  "license":"${var.controllerLicense}"
+  "license": ${jsonencode(var.controllerLicense)}
   }
   EOF
 }

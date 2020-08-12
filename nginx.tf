@@ -4,7 +4,7 @@ data template_file nginx_onboard {
   template = file("${path.module}/scripts/nginx/startup.sh.tpl")
 
   vars = {
-    MYVAR = "12134"
+    controllerAddress = "12134"
   }
 }
 resource google_compute_instance_template nginx-template {

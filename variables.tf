@@ -47,3 +47,7 @@ variable controllerLicense {
   description = "license for controller"
   default     = "none"
 }
+variable controllerBucket {
+  description = "name of controller installer bucket"
+  default     = "none"
+}

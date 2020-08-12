@@ -1,5 +1,15 @@
 #!/bin/bash
-touch /status.log
+# logging
+LOG_FILE="/status.log"
+if [ ! -e $LOG_FILE ]
+then
+     touch $LOG_FILE
+     exec &>>$LOG_FILE
+else
+    #if file exists, exit as only want to run once
+    exit
+fi
+exec 1>$LOG_FILE 2>&1
 echo "starting" >> /status.log
 # install packages
 apt-get update
@@ -46,8 +56,8 @@ EOF
 docker-compose up -d
 echo "docker done" >> /status.log
 # install controller
-token=$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token' -H 'Metadata-Flavor: Google' | jq -r .access_token )
-url="https://storage.googleapis.com/storage/v1/b/controller-demo/o/controller-installer-3.7.0.tar.gz?alt=media"
+token=$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/${serviceAccount}/token' -H 'Metadata-Flavor: Google' | jq -r .access_token )
+url="https://storage.googleapis.com/storage/v1/b/${bucket}/o/controller-installer-3.7.0.tar.gz?alt=media"
 name=$(basename $url )
 file=$${name}
 file=$${file%"?alt=media"}
@@ -132,7 +142,7 @@ EOF
 ## payloads
 payloadLicense=$(cat -<<EOF
 {
-  "content": "$(cat /controller_license.txt)"
+  "content": "$(echo -n "$(cat /controller_license.txt)" | base64 -w 0)"
 }
 EOF
 )
@@ -160,6 +170,7 @@ function license() {
         cookie=$(cat /cookie.txt | grep Set-Cookie: | awk '{print $2}')
         rm /cookie.txt
         curl -sk --header "Content-Type:application/json" --header "Cookie: $cookie" --data "$payloadLicense" --url https://$ip/$version/platform/license-file
+        curl -sk --header "Content-Type:application/json" --header "Cookie: $cookie" --url https://$ip/$version/platform/license
         break
     else
         echo "Status $status"

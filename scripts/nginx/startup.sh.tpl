@@ -1,5 +1,16 @@
 #!/bin/bash
 #https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-plus/
+# logging
+LOG_FILE="/status.log"
+if [ ! -e $LOG_FILE ]
+then
+     touch $LOG_FILE
+     exec &>>$LOG_FILE
+else
+    #if file exists, exit as only want to run once
+    exit
+fi
+exec 1>$LOG_FILE 2>&1
 echo "starting"
 apt-get update
 apt-get install jq -y
@@ -57,7 +68,7 @@ curl -sk --header "Content-Type:application/json"  --data "$payload" --url https
 cookie=$(cat /cookie.txt | grep Set-Cookie: | awk '{print $2}')
 rm /cookie.txt
 # get token
-token=$(curl -sk --header "Content-Type:application/json" --header "Cookie: $cookie" --url https://$controller/$version$tokenUrl | jq -r .desiredState.agentSettings.apiKey)
+token=$(curl -sk --header "Content-Type:application/json" --header "Cookie: $cookie" --url https://$ip/$version$tokenUrl | jq -r .desiredState.agentSettings.apiKey)
 # agent install
 curl -ksS -L https://$ip:8443$agentUrl > install.sh && \
 API_KEY="$token" sh ./install.sh
