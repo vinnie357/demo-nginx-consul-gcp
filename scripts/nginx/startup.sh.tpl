@@ -48,6 +48,8 @@ apt-get install -y nginx-plus
 #controllerToken=$(gcloud secrets versions access latest --secret="controller-agent")
 
 # connect agent to controller
+function register() {
+# Check api Ready
 ip="$(gcloud compute instances list --filter name:controller --format json | jq -r .[0].networkInterfaces[0].networkIP)"
 version="api/v1"
 loginUrl="/platform/login"
@@ -57,20 +59,34 @@ payload=$(cat -<<EOF
 {
   "credentials": {
         "type": "BASIC",
-        "username": "admin@nginx-gcp.internal",
-        "password": "admin123!"
+        "username": "$(echo $secrets | jq -r .cuser)",
+        "password": "$(echo $secrets | jq -r .cpass)"
   }
 }
 EOF
 )
-# get cookie
-curl -sk --header "Content-Type:application/json"  --data "$payload" --url https://$ip/$version$loginUrl --dump-header /cookie.txt
-cookie=$(cat /cookie.txt | grep Set-Cookie: | awk '{print $2}')
-rm /cookie.txt
-# get token
-token=$(curl -sk --header "Content-Type:application/json" --header "Cookie: $cookie" --url https://$ip/$version$tokenUrl | jq -r .desiredState.agentSettings.apiKey)
-# agent install
-curl -ksS -L https://$ip:8443$agentUrl > install.sh && \
-API_KEY="$token" sh ./install.sh
+count=0
+while [ $count -le 10 ]
+do
+status=$(curl -ksi https://$ip/$version$loginUrl  | grep HTTP | awk '{print $2}')
+if [[ $status == "401" ]]; then
+    echo "ready $status"
+    curl -sk --header "Content-Type:application/json"  --data "$payload" --url https://$ip/$version$loginUrl --dump-header /cookie.txt
+    cookie=$(cat /cookie.txt | grep Set-Cookie: | awk '{print $2}')
+    rm /cookie.txt
+    # get token
+    token=$(curl -sk --header "Content-Type:application/json" --header "Cookie: $cookie" --url https://$ip/$version$tokenUrl | jq -r .desiredState.agentSettings.apiKey)
+    # agent install
+    curl -ksS -L https://$ip:8443$agentUrl > install.sh && \
+    API_KEY="$token" sh ./install.sh
+    break
+else
+    echo "not ready $status"
+    count=$[$count+1]
+fi
+sleep 60
+done
+}
+register
 
 echo "done"

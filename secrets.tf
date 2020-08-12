@@ -21,7 +21,9 @@ resource google_secret_manager_secret_version nginx-secret {
   secret_data = <<-EOF
   {
   "cert":"${var.nginxCert}",
-  "key": "${var.nginxKey}"
+  "key": "${var.nginxKey}",
+  "cuser": "${var.controllerAccount}",
+  "cpass": "${var.controllerPass}"
   }
   EOF
 }
@@ -43,7 +45,11 @@ resource google_secret_manager_secret_version controller-secret {
   secret      = google_secret_manager_secret.controller-secret.id
   secret_data = <<-EOF
   {
-  "license": ${jsonencode(var.controllerLicense)}
+  "license": ${jsonencode(var.controllerLicense)},
+  "user": "${var.controllerAccount}",
+  "pass": "${var.controllerPass}",
+  "dbpass": "${var.dbPass}",
+  "dbuser": "${var.dbUser}"
   }
   EOF
 }

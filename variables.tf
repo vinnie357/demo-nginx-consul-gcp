@@ -51,3 +51,19 @@ variable controllerBucket {
   description = "name of controller installer bucket"
   default     = "none"
 }
+variable controllerAccount {
+  description = "name of controller admin account"
+  default     = "admin@nginx-gcp.internal"
+}
+variable controllerPass {
+  description = "pass of controller admin account"
+  default     = "admin123!"
+}
+variable dbPass {
+  description = "pass of controller admin account"
+  default     = "naaspassword"
+}
+variable dbUser {
+  description = "pass of controller admin account"
+  default     = "naas"
+}

@@ -1,6 +1,19 @@
 # demo-nginx-consul
 nginx k8s consul in gke
 
+## Requirements
+
+- GCS bucket with controller tarball
+
+    eg: controller-installer-3.7.0.tar.gz
+
+- Controller
+  - license file
+
+- Nginx plus
+  - cert
+  - key
+
 ## Workflow
 
 Demo is to show container registry into Hashicorp consul which will be used as a configuration source to build NGINX+ configuration. NGINX+ instance will also be registered in NGINX Controller.
@@ -23,3 +36,23 @@ Other open source options include Registrator from Glider Labs and ContainerPilo
 ```
 - Consul Template
   - https://learn.hashicorp.com/tutorials/consul/load-balancing-nginx
+
+### variables
+
+```hcl
+projectPrefix     = "demonginx"
+gcpProjectId      = "myprojectid"
+gcpRegion         = "us-east1"
+gcpZone           = "us-east1-b"
+nginxKey          = "198rt9de8fu"
+nginxCert         = "fdsfjsakdf"
+adminAccount      = "notadmin"
+adminPass         = "pleaseusevault"
+adminSrcAddr      = ["192.168.1.2/32", "102.67.2.5/32"]
+controllerBucket  = "my-bucket"
+controllerLicense = "mylicensetext"
+controllerAccount = "myemail@domain.com"
+controllerPass    = "pleaseusevault"
+dbPass            = "pleaseusevault"
+dbUser            = "mydbuser"
+```

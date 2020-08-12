@@ -35,6 +35,8 @@ curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compo
 chmod +x /usr/local/bin/docker-compose
 #Run  services for controller
 sleep 10
+# access secret from secretsmanager
+secrets=$(gcloud secrets versions access latest --secret="controller-secret")
 cat << EOF > docker-compose.yml
 version: "3.7"
 services:
@@ -44,8 +46,8 @@ services:
     - "5432:5432"
     restart: always
     environment:
-      POSTGRES_USER: "naas"
-      POSTGRES_PASSWORD: "naaspassword"
+      POSTGRES_USER: "$(echo $secrets | jq -r .dbuser)"
+      POSTGRES_PASSWORD: "$(echo $secrets | jq -r .dbpass)"
       POSTGRES_DB: "naas"
   controller-smtp:
     image: namshi/smtp
@@ -102,7 +104,10 @@ echo "installing controller" >> /status.log
 sudo tee /retry.sh <<EOF
 # set vars
 local_ipv4="$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip' -H 'Metadata-Flavor: Google')"
-pw="admin123!"
+pw="$(echo "$secrets" | jq -r .pass)"
+admin="$(echo "$secrets" | jq -r .user)"
+dbpass="$(echo "$secrets" | jq -r .dbpass)"
+dbuser="$(echo "$secrets" | jq -r .dbuser)"
 cd /controller-installer/
 ./install.sh \
 --non-interactive \
@@ -110,14 +115,14 @@ cd /controller-installer/
 --self-signed-cert \
 --db-host "\$local_ipv4" \
 --db-port 5432 \
---db-user naas \
---db-pass naaspassword \
+--db-user "\$dbuser" \
+--db-pass "\$dbpass" \
 --smtp-host "\$local_ipv4" \
 --smtp-port 2587 \
 --smtp-authentication false \
 --smtp-use-tls false \
 --noreply-address noreply@example.com \
---admin-email admin@nginx-gcp.internal \
+--admin-email "\$admin" \
 --admin-password "\$pw" \
 --fqdn "\$local_ipv4" \
 --admin-firstname Admin \
@@ -131,8 +136,6 @@ su - controller -c "/retry.sh"
 sed -i "s/controller ALL=(ALL:ALL) NOPASSWD: ALL//g" /etc/sudoers
 rm /retry.sh
 # licence
-# access secret from secretsmanager
-secrets=$(gcloud secrets versions access latest --secret="controller-secret")
 # install cert key
 echo "setting info from Metadata secret"
 # license
@@ -150,8 +153,8 @@ payload=$(cat -<<EOF
 {
   "credentials": {
         "type": "BASIC",
-        "username": "admin@nginx-gcp.internal",
-        "password": "admin123!"
+        "username": "$(echo $secrets | jq -r .user)",
+        "password": "$(echo $secrets | jq -r .pass)"
   }
 }
 EOF
