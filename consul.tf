@@ -2,7 +2,7 @@
 
 # Setup Onboarding scripts
 data template_file consul_onboard {
-  template = file("${path.module}/scripts/consul/startup.sh.tpl")
+  template = file("${path.module}/templates/consul/startup.sh.tpl")
 
   vars = {
     CONSUL_VERSION = "1.7.2"
@@ -36,7 +36,7 @@ resource google_compute_instance_template consul-template {
   }
   metadata = {
     startup-script = data.template_file.consul_onboard.rendered
-    #shutdown-script = "${file("${path.module}/scripts/consul/shutdown.sh")}"
+    #shutdown-script = "${file("${path.module}/templates/consul/shutdown.sh")}"
   }
   service_account {
     #email = google_service_account.consul-sa.email

@@ -1,6 +1,6 @@
 # Setup Onboarding scripts
 data template_file controller_onboard {
-  template = file("${path.module}/scripts/controller/startup.sh.tpl")
+  template = file("${path.module}/templates/controller/startup.sh.tpl")
 
   vars = {
     bucket         = var.controllerBucket
@@ -35,7 +35,7 @@ resource google_compute_instance_template controller-template {
   }
   metadata = {
     startup-script = data.template_file.controller_onboard.rendered
-    #shutdown-script = "${file("${path.module}/scripts/controller/shutdown.sh")}"
+    #shutdown-script = "${file("${path.module}/templates/controller/shutdown.sh")}"
   }
   service_account {
     email  = google_service_account.gce-controller-sa.email

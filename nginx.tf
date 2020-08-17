@@ -1,7 +1,7 @@
 # template
 # Setup Onboarding scripts
 data template_file nginx_onboard {
-  template = file("${path.module}/scripts/nginx/startup.sh.tpl")
+  template = file("${path.module}/templates/nginx/startup.sh.tpl")
 
   vars = {
     controllerAddress = "12134"
@@ -32,7 +32,7 @@ resource google_compute_instance_template nginx-template {
   }
   metadata = {
     startup-script = data.template_file.nginx_onboard.rendered
-    #shutdown-script = "${file("${path.module}/scripts/nginx/shutdown.sh")}"
+    #shutdown-script = "${file("${path.module}/templates/nginx/shutdown.sh")}"
   }
   service_account {
     email  = google_service_account.gce-nginx-sa.email
