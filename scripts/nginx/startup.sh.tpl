@@ -51,16 +51,32 @@ apt-get install -y nginx-plus
 function register() {
 # Check api Ready
 ip="$(gcloud compute instances list --filter name:controller --format json | jq -r .[0].networkInterfaces[0].networkIP)"
+zone=$(curl -s -H Metadata-Flavor:Google http://metadata/computeMetadata/v1/instance/zone | cut -d/ -f4)
 version="api/v1"
 loginUrl="/platform/login"
 tokenUrl="/platform/global"
 agentUrl="/1.4/install/controller/"
+locationsUri="/infrastructure/locations"
 payload=$(cat -<<EOF
 {
   "credentials": {
         "type": "BASIC",
         "username": "$(echo $secrets | jq -r .cuser)",
         "password": "$(echo $secrets | jq -r .cpass)"
+  }
+}
+EOF
+)
+zonePayload=$(cat -<<EOF
+{
+  "metadata": {
+    "name": "$zone",
+    "displayName": "$zone",
+    "description": "$zone",
+    "tags": ["gce"]
+  },
+  "desiredState": {
+    "type": "OTHER_LOCATION"
   }
 }
 EOF
@@ -74,11 +90,13 @@ if [[ $status == "401" ]]; then
     curl -sk --header "Content-Type:application/json"  --data "$payload" --url https://$ip/$version$loginUrl --dump-header /cookie.txt
     cookie=$(cat /cookie.txt | grep Set-Cookie: | awk '{print $2}')
     rm /cookie.txt
+    #create location
+    curl -sk --header "Content-Type:application/json" --header "Cookie: $cookie" --data "$zonePayload" --url https://$ip/$version$locationsUri
     # get token
     token=$(curl -sk --header "Content-Type:application/json" --header "Cookie: $cookie" --url https://$ip/$version$tokenUrl | jq -r .desiredState.agentSettings.apiKey)
     # agent install
     curl -ksS -L https://$ip:8443$agentUrl > install.sh && \
-    API_KEY="$token" sh ./install.sh
+    API_KEY="$token" sh ./install.sh --location-name $zone -y
     break
 else
     echo "not ready $status"

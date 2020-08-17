@@ -183,6 +183,28 @@ function license() {
     done
 }
 license
+function environments() {
+environmentsUri="/services/environments"
+environments="development test production"
+for env in $environments;
+do
+envPayload=$(cat -<<EOF
+{
+  "metadata": {
+    "name": "$env",
+    "displayName": "$env",
+    "description": "",
+    "tags": []
+  },
+  "desiredState": {}
+}
+EOF
+)
+echo $envPayload | jq .
+curl -sk --header "Content-Type:application/json" --header "Cookie: $cookie" --data "$envPayload" --url https://$ip/$version$environmentsUri
+done 
+}
+environments
 echo "done" >> /status.log
 exit
 
