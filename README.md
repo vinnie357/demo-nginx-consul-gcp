@@ -9,10 +9,14 @@ nginx k8s consul in gke
 
 - Controller
   - license file
+  
+    [trial license](https://www.nginx.com/free-trial-request-nginx-controller/)
 
 - Nginx plus
   - cert
   - key
+  
+    [trial keys](https://www.nginx.com/free-trial-request/)
 
 ## Workflow
 
