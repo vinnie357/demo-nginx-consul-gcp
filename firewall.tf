@@ -1,5 +1,5 @@
 # firewall
-resource google_compute_firewall default-allow-internal {
+resource "google_compute_firewall" "default-allow-internal" {
   name    = "${var.projectPrefix}default-allow-internal-${random_pet.buildSuffix.id}"
   network = google_compute_network.vpc_network.name
 
@@ -21,7 +21,7 @@ resource google_compute_firewall default-allow-internal {
 }
 
 # mgmt
-resource google_compute_firewall mgmt {
+resource "google_compute_firewall" "mgmt" {
   name    = "${var.projectPrefix}mgmt-firewall${random_pet.buildSuffix.id}"
   network = google_compute_network.vpc_network.name
 
@@ -36,7 +36,7 @@ resource google_compute_firewall mgmt {
 
   source_ranges = var.adminSrcAddr
 }
-resource google_compute_firewall iap-ingress {
+resource "google_compute_firewall" "iap-ingress" {
   name    = "${var.projectPrefix}-iap-firewall${random_pet.buildSuffix.id}"
   network = google_compute_network.vpc_network.name
 

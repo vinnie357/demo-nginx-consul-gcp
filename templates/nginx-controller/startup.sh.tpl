@@ -36,7 +36,7 @@ chmod +x /usr/local/bin/docker-compose
 #Run  services for controller
 sleep 10
 # access secret from secretsmanager
-secrets=$(gcloud secrets versions access latest --secret="controller-secret")
+secrets=$(gcloud secrets versions access latest --secret="${secretName}")
 cat << EOF > docker-compose.yml
 version: "3.7"
 services:
@@ -59,7 +59,7 @@ docker-compose up -d
 echo "docker done" >> /status.log
 # install controller
 token=$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/${serviceAccount}/token' -H 'Metadata-Flavor: Google' | jq -r .access_token )
-url="https://storage.googleapis.com/storage/v1/b/${bucket}/o/controller-installer-3.7.0.tar.gz?alt=media"
+url="https://storage.googleapis.com/storage/v1/b/${bucket}/o/controller-installer-3.12.1.tar.gz?alt=media"
 name=$(basename $url )
 file=$${name}
 file=$${file%"?alt=media"}

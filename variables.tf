@@ -1,34 +1,34 @@
 # admin
-variable adminSrcAddr {
+variable "adminSrcAddr" {
   description = "admin src address in cidr"
 }
-variable adminAccount {
+variable "adminAccount" {
   description = "admin account"
 }
-variable adminPass {
+variable "adminPass" {
   description = "admin password"
 }
 # GKE
-variable projectPrefix {
+variable "projectPrefix" {
   description = "prefix for resources"
 }
-variable gcpZone {
+variable "gcpZone" {
   description = "zone where gke is deployed"
 }
-variable gcpRegion {
+variable "gcpRegion" {
   description = "region where gke is deployed"
 }
-variable gcpProjectId {
+variable "gcpProjectId" {
   description = "gcp project id"
 }
 #https://cloud.google.com/kubernetes-engine/docs/release-notes-regular
 #https://cloud.google.com/kubernetes-engine/versioning-and-upgrades
 #gcloud container get-server-config --region us-east1
-variable gkeVersion {
-  default = "1.16.13-gke.1"
+variable "gkeVersion" {
+  default = "1.18.14-gke.1200"
 }
 
-variable podCidr {
+variable "podCidr" {
   description = "k8s pod cidr"
   default     = "10.56.0.0/14"
 }
@@ -36,34 +36,37 @@ variable podCidr {
 # consul
 
 # nginx
-variable nginxKey {
+variable "nginxKey" {
   description = "key for nginxplus"
 }
-variable nginxCert {
+variable "nginxCert" {
   description = "cert for nginxplus"
 }
+variable "nginxPublicKey" {
+  description = "admin public key"
+}
 # controller
-variable controllerLicense {
+variable "controllerLicense" {
   description = "license for controller"
   default     = "none"
 }
-variable controllerBucket {
+variable "nginx-controllerBucket" {
   description = "name of controller installer bucket"
   default     = "none"
 }
-variable controllerAccount {
+variable "controllerAccount" {
   description = "name of controller admin account"
   default     = "admin@nginx-gcp.internal"
 }
-variable controllerPass {
+variable "controllerPass" {
   description = "pass of controller admin account"
   default     = "admin123!"
 }
-variable dbPass {
+variable "dbPass" {
   description = "pass of controller admin account"
   default     = "naaspassword"
 }
-variable dbUser {
+variable "dbUser" {
   description = "pass of controller admin account"
   default     = "naas"
 }
