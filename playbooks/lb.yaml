@@ -1,0 +1,177 @@
+---
+- name: Unified Demo Setup -MGMT and APP Load Balancers
+  hosts: lb,ctl_lb
+  user: demoadmin
+  become: yes
+  tasks:
+  - name: Install dependancies
+    package:
+      name:
+      - apt-transport-https
+      - lsb-release
+      - ca-certificates
+      state: latest
+
+  - name: Make Nginx Plus ssl cert dir
+    file:
+      path: /etc/ssl/nginx
+      state: directory
+      mode: '0755'
+
+  - name: Install Nginx Plus Repo certs
+    copy:
+      src: "{{ item }}"
+      dest: /etc/ssl/nginx
+      mode: '0644'
+    with_fileglob:
+      - ../certs/nginx-repo*
+
+  - name: Install Nginx Plus apt key
+    apt_key:
+      url: http://nginx.org/keys/nginx_signing.key
+      state: present
+
+  - name: Download Nginx Plus apt config
+    get_url:
+      url: https://cs.nginx.com/static/files/90nginx
+      dest: /etc/apt/apt.conf.d
+      mode: '0440'
+
+  - name: Add Nginx Plus Repo
+    apt_repository:
+      repo: deb https://plus-pkgs.nginx.com/ubuntu {{ ansible_distribution_release }} nginx-plus
+      state: present
+
+  - name: Install Nginx Plus
+    package:
+      name:
+      - nginx-plus
+      - app-protect
+      state: latest
+    when: "'lb' in group_names"
+
+  - name: Remove preinstalled Nginx Plus
+    package:
+      name:
+      - nginx-plus
+      - nginx
+      - app-protect
+      state: absent
+    when: "'ctl_lb' in group_names"
+
+  - name: Install Required Packages for Controller Agent
+    package:
+      name:
+      - "nginx-plus=22-1~{{ ansible_distribution_release }}"
+      - grub-pc-bin
+      #- avrd
+      #- avrd-libs
+      - libxerces-c3.2
+      state: present
+    when: "'ctl_lb' in group_names"
+
+
+  - name: Remove Cert files
+    file:
+      path: /etc/ssl/nginx
+      state: absent
+
+  - name: Remove Apt config
+    file:
+      path: /etc/apt/apt.conf.d/90nginx
+      state: absent
+
+  - name: Remove Nginx Plus Repo
+    apt_repository:
+      repo: deb https://plus-pkgs.nginx.com/ubuntu {{ ansible_distribution_release }} nginx-plus
+      state: absent
+
+  - name: Enable Nginx Service
+    service:
+      name: nginx
+      enabled: yes
+
+  - name: Reload Nginx Service
+    service:
+      name: nginx
+      state: reloaded
+
+
+- name: Unified Demo Setup - MGMT LBs
+  hosts: lb
+  user: demoadmin
+  become: yes
+  tasks:
+  - name: Make Nginx Plus stream includes dir
+    file:
+      path: /etc/nginx/stream.d
+      state: directory
+      mode: '0755'
+
+  - name: Get stale http configs
+    find:
+      paths: /etc/nginx/config.d
+      patterns: "*.config"
+    register: http_files_to_delete
+
+  - name: Get stale stream configs
+    find:
+      paths: /etc/nginx/stream.d
+      patterns: "*.config"
+    register: stream_files_to_delete
+
+  - name: remove stale http config
+    file:
+      path: "{{ item.path }}"
+      state: absent
+    with_items: "{{ http_files_to_delete.files }}"
+
+  - name: remove stale stream config
+    file:
+      path: "{{ item.path }}"
+      state: absent
+    with_items: "{{ stream_files_to_delete.files }}"
+
+  - name: Install Nginx Plus configs
+    copy:
+      src: "{{ item }}"
+      dest: /etc/nginx/conf.d
+      mode: '0644'
+    with_fileglob:
+      - ../configs/nginx/*.conf
+
+  - name: Install SSL Certs
+    copy:
+      src: "{{ item }}"
+      dest: /etc/nginx/conf.d
+      mode: '0644'
+    with_fileglob:
+      - ../certs/*.pem
+
+  - name: Build NGINX config for MGMT LB
+    template:
+      src: ../templates/nginx.conf
+      dest: /etc/nginx/nginx.conf
+      mode: "0644"
+
+  - name: Build NGINX config for controller
+    template:
+      src: ../templates/controller.conf
+      dest: /etc/nginx/conf.d/controller.conf
+      mode: "0644"
+
+  - name: Build NGINX config for K8S API LB
+    template:
+      src: ../templates/k8s-api.conf
+      dest: /etc/nginx/stream.d/k8s-api.conf
+      mode: "0644"
+
+  - name: Enable Nginx Service
+    service:
+      name: nginx
+      enabled: yes
+
+  - name: Reload Nginx Service
+    service:
+      name: nginx
+      state: reloaded

@@ -1,0 +1,57 @@
+---
+- name: Getting Facts for all hosts
+  hosts: all
+  tasks: [ ]
+
+- name: Unified Demo Setup - Internal DNS servers
+  hosts: internal_dns
+  user: demoadmin
+  become: yes
+  tasks:
+
+  - name: Install dnsmasq
+    package:
+      name:
+      - dnsmasq
+
+  - name: Build Hosts File for dnsmasq
+    template:
+      src: ../templates/unified-demo.hosts
+      dest: /etc/unified-demo.hosts
+      mode: "0644"
+
+  - name: Install dnsmasq config
+    copy:
+      src: ../configs/dnsmasq/dnsmasq.conf
+      dest: /etc/dnsmasq.conf
+      mode: "0644"
+
+  - name: Restart dnsmasq Service
+    service:
+      name: dnsmasq
+      state: restarted
+      enabled: yes
+
+- name: Unified Demo - Bootstrap Jumphost
+  hosts: all
+  user: demoadmin
+  become: yes
+  tasks:
+
+  - name: deploy resolv.conf template
+    template:
+      src: ../templates/resolv.conf
+      dest: /etc/resolv.conf.head
+      owner: root
+      group: root
+      mode: 0644
+      backup: yes
+
+  - name: deploy resolv.conf template
+    template:
+      src: ../templates/resolv.conf
+      dest: /etc/resolv.conf
+      owner: root
+      group: root
+      mode: 0644
+      backup: yes

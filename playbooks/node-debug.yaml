@@ -1,0 +1,14 @@
+---
+- name: Node Debugging
+  user: demoadmin
+  hosts: controller
+  become: yes
+  tasks:
+
+  - name: K8S Primary Controllers
+    shell: "echo {{ inventory_hostname }}"
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: K8S Secondary Controllers
+    shell: "echo {{ inventory_hostname }}"
+    when: inventory_hostname != groups['controller'] | intersect(groups['azure_loc_'+location]) | first

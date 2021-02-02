@@ -1,0 +1,19 @@
+---
+- name: Unified Demo - Bootstrap Jumphost
+  hosts: all
+  user: demoadmin
+  become: yes
+  tasks:
+
+  - name: Install Required Packages
+    package:
+        name:
+          - python3
+          - python3-pip
+          - python-pip
+
+  - name: Uninstall Network Manager
+    package:
+        name:
+          - network-manager
+        state: absent

@@ -1,0 +1,37 @@
+---
+- name: Unified Demo Setup - K8S Controller
+  hosts: controller
+  user: demoadmin
+  become: yes
+  tasks:
+  - name: Base K8S dependecies
+    include: k8s-dependancies.yaml
+
+  - name: K8S Reset
+    shell: kubeadm reset -f
+    tags:
+    - reset
+
+  - name: Stop all Docker Containers
+    shell: "docker ps | awk 'NR>1 {print $1}' | xargs -r docker stop"
+    tags:
+    - reset
+
+  - name: Initializing K8S Primary Controllers
+    include: k8s-init.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+    tags:
+    - init
+
+  - name: Secondary K8S Controllers Joining Cluster
+    include: k8s-controller-join.yaml
+    when: inventory_hostname != groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+    tags:
+    - join
+
+  - name: Remove Taint
+    shell: kubectl taint nodes --all node-role.kubernetes.io/master-
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+    tags:
+    - taint
+    - join

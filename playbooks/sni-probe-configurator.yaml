@@ -1,0 +1,35 @@
+---
+- name: Deploy Cron for SNI Probes
+  hosts: localhost
+  become: yes
+  tasks:
+
+  - name: Get Ingresses
+    shell: "/usr/local/bin/oc get ingress --all-namespaces -o yaml"
+    register: ingress_info
+    tags:
+    - ingress
+
+  - name: Set Facts
+    set_fact:
+      ingress: "{{ ingress_info.stdout | from_yaml }}"
+
+  - name: Debug Ingress
+    debug:
+      msg: "{{ item.spec }}"
+    with_items: "{{ ingress['items'] }}"
+
+  - name: Build SNI Probe
+    template:
+      src: /opt/nginx-sniprobe/cron-sniprobe.sh
+      dest: "/opt/nginx-sniprobe/sni-probe-{{ item.metadata.name }}.sh"
+      mode: '0755'
+    when: item.spec.ingressClassName == "nginx"
+    with_items: "{{ ingress['items'] }}"
+
+  - name: Setup cronjob
+    cron:
+      name: "NGINX Plus SNI Probe Cron Job {{ item.metadata.name }}"
+      job: "/opt/nginx-sniprobe/sni-probe-{{ item.metadata.name }}.sh"
+    when: item.spec.ingressClassName == "nginx"
+    with_items: "{{ ingress['items'] }}"

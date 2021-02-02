@@ -56,7 +56,7 @@ variable "nginx-controllerBucket" {
 }
 variable "controllerAccount" {
   description = "name of controller admin account"
-  default     = "admin@nginx-gcp.internal"
+  default     = "admin"
 }
 variable "controllerPass" {
   description = "pass of controller admin account"
@@ -69,4 +69,9 @@ variable "dbPass" {
 variable "dbUser" {
   description = "pass of controller admin account"
   default     = "naas"
+}
+
+variable "baseDomain" {
+  description = "The root DNS name"
+  type        = string
 }

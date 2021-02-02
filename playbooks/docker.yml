@@ -1,0 +1,32 @@
+---
+- name: install docker
+  hosts: localhost
+  tasks:
+
+  - name: Remove Unneeded Docker Packages
+    package:
+      name:
+      - docker
+      - docker-engine
+      - docker.io
+      - containerd
+      - runc
+      state: absent
+
+  - name: Install Docker apt key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+  - name: Add Docker Repo
+    apt_repository:
+      repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+      state: present
+
+  - name: Add Docker Packages
+    package:
+      name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      state: latest

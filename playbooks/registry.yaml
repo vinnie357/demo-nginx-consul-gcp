@@ -1,0 +1,63 @@
+---
+- name: Setup Docker Registry in K8S
+  hosts: controller, worker
+  user: demoadmin
+  become: yes
+  tasks:
+
+  - name: Install jq
+    package:
+      name:
+      - jq
+      state: present
+
+  - name: Copy Registry Service Definition
+    copy:
+      src: ../configs/kube/registry_deployment.yaml
+      dest: /tmp/registry_deployment.yaml
+      mode: '0644'
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: Apply Docker Registry Service
+    shell: kubectl apply -f /tmp/registry_deployment.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+- name: Setup Docker Registry in K8S
+  hosts: lb
+  user: demoadmin
+  become: yes
+  tasks:
+
+  - name: Build NGINX Config for Docker Registry Service
+    template:
+      src: ../templates/registry.conf
+      dest: /etc/nginx/conf.d/registry.conf
+      mode: "0644"
+    tags:
+    - ngx_config
+
+  - name: Reload Nginx Service
+    service:
+      name: nginx
+      state: reloaded
+    tags:
+    - ngx_config
+
+- name: Setup Docker Registry in K8S
+  hosts: controller
+  user: demoadmin
+  tags:
+  - login
+  tasks:
+
+  - name: Install Python Docker Module
+    pip:
+      name: docker-py
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: Log into Docker Registry
+    docker_login:
+      registry_url: https://registry.nginx.lol
+      username: docker
+      password: rekcod
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first

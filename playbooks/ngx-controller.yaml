@@ -1,0 +1,129 @@
+---
+- name: Unified Demo - NGINX Controller Setup
+  hosts: ngx_controller
+  user: demoadmin
+  tasks:
+
+  - name: Install Required Packages
+    become: yes
+    package:
+      name:
+      - util-linux
+      - coreutils
+      - iproute2
+      - iptables
+      - socat
+      - ebtables
+      - ethtool
+      - conntrack
+
+  - name: Add Docker Dependancies
+    become: yes
+    package:
+      name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg-agent
+      - software-properties-common
+      - jq
+      state: latest
+
+  - name: Install Docker apt key
+    become: yes
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Install Kubernetes apt key
+    become: yes
+    apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      state: present
+
+  - name: Add Docker Repo
+    become: yes
+    apt_repository:
+      repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+      state: present
+
+  - name: uninstall unsupported version of kubernetes
+    become: yes
+    package:
+      name:
+      - kubeadm
+      - kubectl
+      - kubelet
+      state: absent
+
+  - name: Turn On IP Forwarding
+    become: yes
+    sysctl:
+      name: net.ipv4.ip_forward
+      value: 1
+      sysctl_set: yes
+      state: present
+      reload: yes
+
+  - name: Add K8S Repo
+    become: yes
+    apt_repository:
+      repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+      state: present
+
+  - name: uninstall unsupported version of Docker
+    become: yes
+    package:
+      name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      state: absent
+
+  - name: install supported version of Docker
+    become: yes
+    package:
+      name:
+      - docker-ce=5:18.09.9~3-0~ubuntu-bionic
+      - docker-ce-cli=5:18.09.9~3-0~ubuntu-bionic
+      - containerd.io=1.2.13-2
+      state: present
+
+  - name: Install Docker daemon config
+    become: yes
+    copy:
+      src: ../configs/docker/daemon.json
+      dest: /etc/docker/daemon.json
+      mode: '0644'
+
+#  - name: Restart Docker
+#    service:
+#      name: docker
+#      state: restarted
+
+
+  - name: Install K8S Dependancies
+    become: yes
+    package:
+      name:
+      - kubeadm=1.15.5-00
+      - kubectl=1.15.5-00
+      - kubelet=1.15.5-00
+      state: present
+
+  - name: Copy NGINX Controller tar ball
+    unarchive:
+      src: "{{ item }}"
+      dest: "/tmp"
+    with_fileglob:
+      - ../controller/*.tar.gz
+    tags:
+      - install
+
+  - name: Install NGINX Controller
+    shell: "./install.sh --non-interactive --tsdb-volume-type local -e admin@{{ root_domain }} -p chang3m3 -g false -b false -m localhost -x 25 -j admin@{{ root_domain }} -f controller.{{ location }}.{{ root_domain }} -t test -u admin --self-signed-cert -y"
+    args:
+      chdir: "/tmp/controller-installer"
+    tags:
+      - install
+      - init

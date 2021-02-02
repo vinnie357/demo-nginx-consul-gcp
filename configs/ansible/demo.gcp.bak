@@ -1,0 +1,20 @@
+# inventory.compute.gcp.yml
+plugin: gcp_compute             # name the plugin you want to use (use `ansible-doc -t inventory -l` to list available plugins)
+projects:
+- fidelity-ctl-demo # Id of your gcp project
+keyed_groups:
+- key: zone
+- key: region
+groups:
+  lb: "'nginx-lb' in name"
+  internal_dns: "'internal-dns' in name"
+  storage: "'storage' in name"
+  jumphost: "'jumphost' in name"
+  worker: "'k8s-worker-node' in name"
+  controller: "'k8s-controller-node' in name"
+  ctl_lb: "'nginx-ctl' in name"
+  ngx_controller: "'nginx-controller' in name"
+auth_kind: serviceaccount       # gcp authentication kind. with service account you should provide the service account json key file to authenticate
+service_account_file: /home/coder/demo-nginx-consul-gcp/serviceaccount.json
+hostnames:
+- name

@@ -1,0 +1,76 @@
+- name: Unified Demo Setup -MGMT and APP Load Balancers
+  hosts: lb
+  user: demoadmin
+  become: yes
+  tasks:
+  - name: Install dependancies
+    package:
+      name:
+      - apt-transport-https
+      - lsb-release
+      - ca-certificates
+      state: latest
+
+  - name: Make Nginx Plus ssl cert dir
+    file:
+      path: /etc/ssl/nginx
+      state: directory
+      mode: '0755'
+
+  - name: Install Nginx Plus Repo certs
+    copy:
+      src: "{{ item }}"
+      dest: /etc/ssl/nginx
+      mode: '0644'
+    with_fileglob:
+      - ../certs/nginx-repo*
+
+  - name: Install Nginx Plus apt key
+    apt_key:
+      url: http://nginx.org/keys/nginx_signing.key
+      state: present
+
+  - name: Download Nginx Plus apt config
+    get_url:
+      url: https://cs.nginx.com/static/files/90nginx
+      dest: /etc/apt/apt.conf.d
+      mode: '0440'
+
+  - name: Add Nginx Plus Repo
+    apt_repository:
+      repo: deb https://plus-pkgs.nginx.com/ubuntu {{ ansible_distribution_release }} nginx-plus
+      state: present
+
+  - name: Install Nginx Plus
+    package:
+      name:
+      - nginx-plus
+      - app-protect
+      - nginx-plus-module-rtmp
+      state: latest
+    when: "'lb' in group_names"
+
+  - name: Remove Cert files
+    file:
+      path: /etc/ssl/nginx
+      state: absent
+
+  - name: Remove Apt config
+    file:
+      path: /etc/apt/apt.conf.d/90nginx
+      state: absent
+
+  - name: Remove Nginx Plus Repo
+    apt_repository:
+      repo: deb https://plus-pkgs.nginx.com/ubuntu {{ ansible_distribution_release }} nginx-plus
+      state: absent
+
+  - name: Enable Nginx Service
+    service:
+      name: nginx
+      enabled: yes
+
+  - name: Reload Nginx Service
+    service:
+      name: nginx
+      state: reloaded

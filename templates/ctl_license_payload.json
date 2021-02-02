@@ -1,0 +1,8 @@
+{
+  "metadata": {
+    "name":"license"
+  },
+  "desiredState": {
+    "content": "{{ lookup('file','../controller/controller_license.txt') | b64encode }}"
+  }
+}

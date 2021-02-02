@@ -1,0 +1,84 @@
+---
+- name: install kube cli tools
+  hosts: citi_lb
+  become: yes
+  tasks:
+  - name: Install Kubernetes apt key
+    apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      state: present
+    tags:
+    - kubectl
+    - kubeadm
+    - kubelet
+
+  - name: Add K8S Repo
+    apt_repository:
+      repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+      state: present
+    tags:
+    - kubectl
+    - kubeadm
+    - kubelet
+
+  - name: Install kubeadm
+    package:
+      name:
+      - kubeadm
+      state: latest
+    tags:
+    - kubeadm
+
+  - name: Install kubectl
+    package:
+      name:
+      - kubectl
+      state: latest
+    tags:
+    - kubectl
+
+  - name: Install kubelet
+    package:
+      name:
+      - kubelet
+      state: latest
+    tags:
+    - kubelet
+
+  - name: Make temp dir
+    file:
+      path: /tmp/openshift
+      state: directory
+      mode: '0755'
+    tags:
+    - openshift
+
+  - name: Get OpenShift CLI
+    unarchive:
+      src:  https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz
+      dest: /tmp/openshift/
+      remote_src: yes
+    tags:
+    - openshift
+
+  - name: Install oc
+    copy:
+      src: /tmp/openshift/oc
+      dest: /usr/local/bin/oc
+      mode: '0755'
+    tags:
+    - openshift
+
+  - name: Set Region
+    set_fact:
+      region: "{{ item.split('-')[1][:-1]}}"
+    with_items:
+    - "{{ hostvars[inventory_hostname].ansible_domain.split('.') | first }}"
+    tags:
+    - debug
+
+  - name: Debug Region
+    debug:
+      msg: "{{ region }}"
+    tags:
+    - debug

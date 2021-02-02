@@ -13,7 +13,7 @@ exec 1>$LOG_FILE 2>&1
 echo "starting" >> /status.log
 # install packages
 apt-get update
-apt-get install gettext bash jq gzip coreutils grep less sed tar python-pexpect socat conntrack -y
+apt-get install ebtables gettext bash jq gzip coreutils grep less sed tar python-pexpect socat conntrack -y
 # docker settings
 mkdir -p /etc/docker
 cat << EOF > /etc/docker/daemon.json

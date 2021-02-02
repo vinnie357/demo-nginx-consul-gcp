@@ -1,0 +1,65 @@
+---
+- name: Configure NGINX for NodePorts
+  hosts: localhost
+  become: no
+  tasks:
+
+  - name: Set KIC Services and Namespace
+    set_fact:
+      services:
+        west: "nginx-plus-ingress"
+        east: "main-ingress"
+      namespaces:
+        west: "nginx-ingress"
+        east: "nginx-ingress"
+    tags:
+    - service
+
+  - name: Set Region
+    set_fact:
+      region: "{{ item.split('-')[1][:-1]}}"
+    with_items:
+    - "{{ hostvars[inventory_hostname].ansible_domain.split('.') | first }}"
+    tags:
+    - debug
+    - service
+
+  - name: Get Service Information
+    shell: "/usr/local/bin/oc -n {{ namespaces[region] }} get service {{ services[region] }} -o yaml"
+    register: service_info
+    tags:
+    - service
+
+  - name: Get Nodes
+    shell: "/usr/local/bin/oc get nodes -o yaml"
+    register: node_info
+
+  - name: Get Pods
+    shell: "/usr/local/bin/oc get pods -n {{ namespaces[region] }} -o yaml"
+    register: pod_info
+
+  - name: Set Facts
+    set_fact:
+      kube:
+        service: "{{ service_info.stdout | from_yaml }}"
+        nodes: "{{ node_info.stdout | from_yaml }}"
+        pods: "{{ pod_info.stdout | from_yaml }}"
+
+  - name: make nginx configs
+    become: yes
+    template:
+      src: /opt/nginx-nodeport/nodePorts.conf
+      dest: /etc/nginx/nginx.conf
+    vars:
+      service: "{{ services[region] }}"
+
+  - name: Validate Config
+    become: yes
+    shell: /usr/sbin/nginx -t
+
+  - name: Reload Nginx
+    become: yes
+    service:
+      name: nginx
+      state: reloaded
+      enabled: yes

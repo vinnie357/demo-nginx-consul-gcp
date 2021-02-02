@@ -1,0 +1,41 @@
+#
+# Managed by Ansible. DO NOT edit it by hand!
+#
+# # Location: {{ location }}
+
+
+# K8S Controllers
+{% for host in groups['controller'] -%}
+{% if hostvars[host]['location'] == location -%}
+{{ hostvars[host]['private_ipv4_addresses'][0] }} {{ hostvars[host]['ansible_host'] }} {{ host }} k8s-controller k8s-controller.{{ location }}.{{ root_domain }}
+{% endif %}
+{% endfor %}
+
+# K8S Workers
+{% for host in groups['worker'] -%}
+{% if hostvars[host]['location'] == location -%}
+{{ hostvars[host]['private_ipv4_addresses'][0] }} {{ hostvars[host]['ansible_host'] }} {{ host }} k8s-workers k8s-workers.{{ location }}.{{ root_domain }}
+{% endif %}
+{% endfor %}
+
+# NGINX Controller
+{% for host in groups['ngx_controller'] -%}
+{% if hostvars[host]['location'] == location -%}
+{{ hostvars[host]['private_ipv4_addresses'][0] }} {{ hostvars[host]['ansible_host'] }} {{ host }} controller controller.{{ location }}.{{ root_domain }}
+{% endif %}
+{% endfor %}
+
+# Load Balancers
+{% for host in groups['lb'] -%}
+{% if hostvars[host]['location'] == location -%}
+{{ hostvars[host]['private_ipv4_addresses'][0] }} {{ hostvars[host]['ansible_host'] }} {{ host }} k8s-api registry k8s-api.{{ location }}.{{ root_domain }}
+{{ hostvars[host]['private_ipv4_addresses'][0] }} registry registry.{{ location }}.{{ root_domain }} registry.{{ root_domain }}
+{% endif %}
+{% endfor %}
+
+#All Nodes
+{% for host in groups['all'] -%}
+{% if hostvars[host]['location'] == location -%}
+{{ hostvars[host]['private_ipv4_addresses'][0] }} {{ hostvars[host]['ansible_hostname'] }}
+{% endif %}
+{% endfor %}

@@ -1,0 +1,104 @@
+---
+- name: Unified Demo Setup - K8S Controller
+  hosts: jumphost
+  user: demoadmin
+  vars:
+    license: "{\"metadata\":{\"name\":\"license\"},\"desiredState\": {\"content\": \"{{ lookup('file','../controller/controller_license.txt') | b64encode }}\"}}"
+  tasks:
+
+  - name: Login
+    uri:
+      url: https://controller/api/v1/platform/login
+      method: POST
+      body: "{\"credentials\": {\"type\": \"BASIC\",\"username\": \"admin@{{ root_domain }}\",\"password\": \"chang3m3\"}}"
+      validate_certs: no
+      status_code: [204]
+      body_format: json
+    register: login
+    run_once: yes
+    tags:
+    - login
+    - location
+    - environment
+    - cert
+
+  - name: Update License
+    uri:
+      url: https://controller/api/v1/platform/license
+      headers:
+        Cookie: "{{ login.cookies_string }}"
+      method: PUT
+      body: "{{ license }}"
+      validate_certs: no
+      status_code: [200,202]
+      body_format: json
+    run_once: yes
+
+  - name: create KIC location
+    uri:
+      body: "{\"metadata\": {\"name\": \"kic-{{ location }}\",\"description\": \"Loadbalancers for Kubernetes ingress\",\"displayName\": \"KIC-{{ location }}\",\"tags\": [\"kic\",\"demo\"]},\"desiredState\": {\"type\": \"OTHER_LOCATION\"}}"
+      url: https://controller/api/v1/infrastructure/locations
+      headers:
+        Cookie: "{{ login.cookies_string }}"
+      method: POST
+      validate_certs: no
+      status_code: [201]
+      body_format: json
+    tags:
+    - location
+    run_once: yes
+
+  - name: Setup Environment
+    uri:
+      body: |
+        {
+          "metadata": {
+            "name": "kic-demo-{{ location }}",
+            "displayName": "KIC Demo {{ location }}",
+            "description": "Demo Env for kic {{ location }}",
+            "tags": [
+              "kic"
+            ]
+          },
+          "desiredState": {}
+        }
+      url: https://controller/api/v1/services/environments
+      headers:
+        Cookie: "{{ login.cookies_string }}"
+      method: POST
+      validate_certs: no
+      status_code: [201,202]
+      body_format: json
+    tags:
+    - environment
+    run_once: yes
+
+  - name: Upload Certs
+    vars:
+      key: "{{ lookup('file','../certs/privkey.pem') | replace('\n','\\n') }}"
+      cert: "{{ lookup('file','../certs/cert.pem') | replace('\n','\\n') }}"
+    uri:
+      body: |
+        {
+          "metadata": {
+            "name": "{{ root_domain | replace('.','-') }}",
+            "displayName": "{{ root_domain }}",
+            "description": "{{ root_domain }} wildcard",
+            "tags": ["kic"]
+          },
+          "desiredState": {
+            "type": "PEM",
+            "privateKey": "{{ key }}",
+            "publicCert": "{{ cert }}"
+          }
+        }
+      url: https://controller/api/v1/services/environments/kic-demo-eastus/certs
+      headers:
+        Cookie: "{{ login.cookies_string }}"
+      method: POST
+      validate_certs: no
+      status_code: [201]
+      body_format: json
+    tags:
+    - cert
+    run_once: yes

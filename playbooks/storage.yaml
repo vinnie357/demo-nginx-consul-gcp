@@ -1,0 +1,131 @@
+---
+- name: Unified Demo Setup - Storage
+  hosts: storage
+  user: demoadmin
+  become: yes
+  tasks:
+  - name: Get Storage Drive Device path
+    shell: lsblk -o NAME,HCTL,SIZE,MOUNTPOINT | grep -i "sd" | grep "3:0:0:1" | awk '{print $1}'
+    register: storage_drive_response
+
+  - name: Confirming Drive
+    debug:
+      msg: "Setting up drive {{ storage_drive_response.stdout }}"
+
+  - name: Format storage drive
+    filesystem:
+      fstype: xfs
+      dev: "/dev/{{ storage_drive_response.stdout }}"
+
+  - name: Mount Storage Drive
+    mount:
+      path: /data
+      src: "/dev/{{ storage_drive_response.stdout }}"
+      state: mounted
+      fstype: xfs
+    register: mount_result
+
+  - name: Mount Info
+    debug:
+      msg: "{{ mount_result }}"
+
+  - name: Add Glusterfs apt key
+    apt_key:
+      url: https://download.gluster.org/pub/gluster/glusterfs/7/rsa.pub
+      state: present
+
+  - name: Add Glusterfs apt repo
+    apt_repository:
+      repo: ppa:gluster/glusterfs-7
+      state: present
+
+  - name: Install Glusterfs packages
+    package:
+      name:
+      - glusterfs-server
+
+      state: present
+
+  - name: Start Glusterfs
+    service:
+      name: glusterd
+      state: started
+      enabled: yes
+
+  - name: Get hostnames for storage nodes
+    debug:
+      msg: "{{ hostvars[item]['ansible_hostname'] }}"
+    when: inventory_hostname == groups['storage'] | intersect(groups['azure_loc_'+location]) | first
+    with_items: "{{ (groups['storage'] | intersect(groups['azure_loc_'+location]))[1:] }}"
+    tags:
+    - peers
+
+  - name: Glusterfs - Probe for Peers
+    shell: "gluster peer probe {{ hostvars[item]['ansible_hostname'] }}"
+    with_items: "{{ (groups['storage'] | intersect(groups['azure_loc_'+location]))[1:] }}"
+    when: inventory_hostname == groups['storage'] | intersect(groups['azure_loc_'+location]) | first
+    tags:
+    - peers
+
+  - name: Glusterfs - Probe for Peers
+    shell: "gluster peer probe {{ hostvars[(groups['storage'] | intersect(groups['azure_loc_'+location]) | first)]['ansible_hostname'] }}"
+    when: inventory_hostname != groups['storage'] | intersect(groups['azure_loc_'+location]) | first
+    tags:
+    - peers
+
+  - name: Make brick directory
+    file:
+      path: /data/brick1/registry
+      state: directory
+      mode: '0755'
+    tags:
+      - volume
+
+  - name: Make registry directory
+    file:
+      path: /registry
+      state: directory
+      mode: '0755'
+    tags:
+    - mount-gfs
+
+  - name: Make Volume for docker registry
+    shell: "gluster volume create registry replica 3 {{ hostvars[volume_hosts[0]]['ansible_hostname'] }}:/data/brick1/registry {{ hostvars[volume_hosts[1]]['ansible_hostname'] }}:/data/brick1/registry {{ hostvars[volume_hosts[2]]['ansible_hostname'] }}:/data/brick1/registry"
+    vars:
+      volume_hosts: "{{ (groups['storage'] | intersect(groups['azure_loc_'+location])) }}"
+    tags:
+      - volume
+    when: inventory_hostname == groups['storage'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: Start Volume for docker registry
+    shell: "gluster volume start registry"
+    tags:
+      - start-volume
+    when: inventory_hostname == groups['storage'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: Mount Storage Drive
+    mount:
+      path: /registry
+      src: "{{ ansible_hostname }}:/registry"
+      state: mounted
+      fstype: glusterfs
+    tags:
+    - mount-gfs
+
+- name: Unified Demo Setup - K8S Controller Storage Setup
+  hosts: controller, storage
+  user: demoadmin
+  tags:
+    - endpoints
+  become: yes
+  tasks:
+  - name: Build GlusterFS manifest for k8s
+    template:
+      src: ../templates/glusterfs.yaml
+      dest: /tmp/glusterfs.yaml
+      mode: "0644"
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: Apply GlusterFS Endpoint Conifg
+    shell: kubectl apply -f /tmp/glusterfs.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first

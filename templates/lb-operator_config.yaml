@@ -1,0 +1,42 @@
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: controller-pwd
+  namespace: nginx-ingress
+data:
+  user_password: '{{ "chang3m3" | b64encode }}'
+
+---
+apiVersion: lb.nginx.com/v1alpha1
+kind: Controller
+metadata:
+  name: demo-controller
+  namespace: nginx-ingress
+spec:
+  user_email: "admin@{{ root_domain }}"
+  secret: "controller-pwd"
+  fqdn: "controller.{{ root_domain }}"
+  environment: "kic-demo-{{ location }}"
+  validate_certs: true
+
+---
+apiVersion: lb.nginx.com/v1alpha1
+kind: Gateway
+metadata:
+  namespace: nginx-ingress
+  name: my-gateway
+spec:
+  controller: "demo-controller"
+  displayName: "KIC Ingress"
+  description: "A gateway deployed by Kubernetes"
+  desiredState:
+    ingress:
+      placement:
+        instancerefs:
+        {% for host in groups['ctl_lb'] -%}{% if hostvars[host]['location'] == location -%}
+        - ref: /infrastructure/locations/kic-{{ location }}/instances/{{ hostvars[host]['ansible_facts']['nodename'] }}
+        {% endif %}{% endfor %}
+      uris:
+        'http://*.nginx.lol': {}

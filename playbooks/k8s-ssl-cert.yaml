@@ -1,0 +1,23 @@
+---
+- name: Generate ssl key and cert for K8S API
+  hosts: 127.0.0.1
+  connection: local
+  tasks:
+  - name: Generate Private key
+    openssl_privatekey: path=../configs/ssl/k8s-api.key
+
+  - name: Generate CSR
+    openssl_csr:
+     path: ../configs/ssl/k8s-api.csr
+     privatekey_path: ../configs/ssl/k8s-api.key
+     common_name: "*.{{ root_domain }}"
+     country_name: US
+     email_address: jam.jones@nginx.com
+     organization_name: NGINX
+
+  - name: Generate a self signed certificate
+    openssl_certificate:
+     csr_path: ../configs/ssl/k8s-api.csr
+     path: ../configs/ssl/k8s-api.crt
+     privatekey_path: ../configs/ssl/k8s-api.key
+     provider: selfsigned

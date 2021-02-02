@@ -1,0 +1,111 @@
+{
+                "cpuPlatform": "Intel Haswell",
+                "creationTimestamp": "2021-02-01T09:53:32.103-08:00",
+                "deletionProtection": false,
+                "description": "nginx-ctl-lb",
+                "disks": [
+                    {
+                        "autoDelete": true,
+                        "boot": true,
+                        "deviceName": "persistent-disk-0",
+                        "diskSizeGb": "10",
+                        "guestOsFeatures": [
+                            {
+                                "type": "SEV_CAPABLE"
+                            },
+                            {
+                                "type": "VIRTIO_SCSI_MULTIQUEUE"
+                            },
+                            {
+                                "type": "UEFI_COMPATIBLE"
+                            }
+                        ],
+                        "index": 0,
+                        "interface": "SCSI",
+                        "kind": "compute#attachedDisk",
+                        "licenses": [
+                            "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/licenses/ubuntu-2004-lts"
+                        ],
+                        "mode": "READ_WRITE",
+                        "source": "https://www.googleapis.com/compute/v1/projects/fidelity-ctl-demo/zones/us-east1-b/disks/fidelity-nginx-czn9",
+                        "type": "PERSISTENT"
+                    }
+                ],
+                "fingerprint": "qM4mcpIARuA=",
+                "id": "4194293751112662772",
+                "image": null,
+                "kind": "compute#instance",
+                "labelFingerprint": "42WmSpB8rSM=",
+                "lastStartTimestamp": "2021-02-01T09:53:37.445-08:00",
+                "machineType": "n1-standard-2",
+                "machineType_selflink": "https://www.googleapis.com/compute/v1/projects/fidelity-ctl-demo/zones/us-east1-b/machineTypes/n1-standard-2",
+                "metadata": {
+                    "created-by": "projects/809660330430/zones/us-east1-b/instanceGroupManagers/fidelity-nginx-ctlb-instance-group-manager",
+                    "instance-template": "projects/809660330430/global/instanceTemplates/nginx-ctlb-template-20210201175257278600000007",
+                    "ssh-keys": "demoadmin:ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDqi08XUlKNeHzIVm6qrSWQozmzNgqH1SUYpxnqgB3pXq3235FTwcRRZtjgvR4grpBBdyLhzIH+JZxauMevR6Vit0kFNp5cxMBrz32nMmlsrZ/W6xJC/+KL6a+JtS4K2e853DVGnODsDqg+tZFCKjTerlBn5wVM6g206OSJWa3DNt6ChOy0XFRsko9Hd0YPhJ7bxmxU/FyEXZ9k3Q5+CC74BiOyPddmpcpMPSdF6gRRFx7QGyDkDaesemYDSzQUk9krDzbYgJ1gF3z+U2C/C7UN/WDsIN481CPAi98C6HHAub5Gdql8EL4lAdUUWZcT8d7KC2h+v4eVBF7/wupi+kUrFw9UnGvUFWfnzOch7uHeUKUbQEK4t/G6EM7ORSPVq1OmWb82K6UAHJ4Rx+Eb7nnu3ZvUaGygFEOc8cUHWCW0PdAPRrwpC+VcjYRyKXtEvJMCqAIW+T+3n5lei7uDy+0TWAtDRzEVOuhhGlVKP66hj3Qzzk7MYXkrtraTxC0kq53WNTNZZJ2SylgUUoowZC4awzbppPe5T23L1Pqgm/TIR2huZXlrcnNuyMu6+yCNhI0KAIG6ZkQQbCIZDIpcRmc1bx8W3FwusA9FktdUUHyNNWLifraDcyh+5tzBluS+YgEyGT6Td1NsSFbTJJfcmxKQLxi0WCZWaJ5gtcd4eOg4gQ==",
+                    "startup-script": "#!/bin/bash\n#https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-plus/\n# logging\nLOG_FILE=\"/status.log\"\nif [ ! -e $LOG_FILE ]\nthen\n     touch $LOG_FILE\n     exec &>>$LOG_FILE\nelse\n    #if file exists, exit as only want to run once\n    exit\nfi\nexec 1>$LOG_FILE 2>&1\necho \"starting\"\napt-get update\napt-get install jq -y\n# make folders\nmkdir /etc/ssl/nginx\ncd /etc/ssl/nginx\n# get cert/key\n# license\n# access secret from secretsmanager\nsecrets=$(gcloud secrets versions access latest --secret=\"nginx-secret\")\n# install cert key\necho \"setting info from Metadata secret\"\n# cert\ncat << EOF > /etc/ssl/nginx/nginx-repo.crt\n$(echo $secrets | jq -r .cert)\nEOF\n# key\ncat << EOF > /etc/ssl/nginx/nginx-repo.key\n$(echo $secrets | jq -r .key)\nEOF\n# get signing key\nwget https://nginx.org/keys/nginx_signing.key\napt-key add nginx_signing.key\n\n# get packages\napt-get install apt-transport-https lsb-release ca-certificates -y\nprintf \"deb https://plus-pkgs.nginx.com/ubuntu `lsb_release -cs` nginx-plus\\n\" | sudo tee /etc/apt/sources.list.d/nginx-plus.list\nwget -q -O /etc/apt/apt.conf.d/90nginx https://cs.nginx.com/static/files/90nginx\n\n# install\napt-get update\napt-get install -y nginx-plus\n# get controller token\n#echo \"Retrieving info from Metadata secret\"\n#controllerToken=$(gcloud secrets versions access latest --secret=\"controller-agent\")\n\n# connect agent to controller\nfunction register() {\n# Check api Ready\n#ip=12134\nip=\"$(gcloud compute instances list --filter name:nginx-controller --format json | jq -r .[0].networkInterfaces[0].networkIP)\"\nzone=$(curl -s -H Metadata-Flavor:Google http://metadata/computeMetadata/v1/instance/zone | cut -d/ -f4)\nversion=\"api/v1\"\nloginUrl=\"/platform/login\"\ntokenUrl=\"/platform/global\"\nagentUrl=\"/1.4/install/controller/\"\nlocationsUri=\"/infrastructure/locations\"\npayload=$(cat -<<EOF\n{\n  \"credentials\": {\n        \"type\": \"BASIC\",\n        \"username\": \"$(echo $secrets | jq -r .cuser)\",\n        \"password\": \"$(echo $secrets | jq -r .cpass)\"\n  }\n}\nEOF\n)\nzonePayload=$(cat -<<EOF\n{\n  \"metadata\": {\n    \"name\": \"$zone\",\n    \"displayName\": \"$zone\",\n    \"description\": \"$zone\",\n    \"tags\": [\"gce\"]\n  },\n  \"desiredState\": {\n    \"type\": \"OTHER_LOCATION\"\n  }\n}\nEOF\n)\nif [[ $ip != \"none\" ]]; then\n  count=0\n  while [ $count -le 10 ]\n  do\n  status=$(curl -ksi https://$ip/$version$loginUrl  | grep HTTP | awk '{print $2}')\n  if [[ $status == \"401\" ]]; then\n      echo \"ready $status\"\n      echo \"wait 1 minute for apis\"\n      sleep 60\n      # login for cookie\n      curl -sk --header \"Content-Type:application/json\"  --data \"$payload\" --url https://$ip/$version$loginUrl --dump-header /cookie.txt\n      cookie=$(cat /cookie.txt | grep Set-Cookie: | awk '{print $2}')\n      rm -f /cookie.txt\n      # locations api\n      tries=0\n      while [ $tries -le 10 ]\n      do\n      locationsApi=$(curl -sik --header \"Content-Type:application/json\" --header \"Cookie: $cookie\" --url https://$ip/$version$locationsUri  | grep HTTP | awk '{print $2}')\n      if [[ $locationsApi == \"200\" ]]; then\n        #create location\n        curl -sk --header \"Content-Type:application/json\" --header \"Cookie: $cookie\" --data \"$zonePayload\" --url https://$ip/$version$locationsUri\n        break\n      fi\n      sleep 6\n      done\n      # get token\n      token=$(curl -sk --header \"Content-Type:application/json\" --header \"Cookie: $cookie\" --url https://$ip/$version$tokenUrl | jq -r .desiredState.agentSettings.apiKey)\n      # agent install\n      curl -ksS -L https://$ip:8443$agentUrl > install.sh && \\\n      API_KEY=\"$token\" sh ./install.sh --location-name $zone -y\n      break\n  else\n      echo \"not ready $status\"\n      count=$[$count+1]\n  fi\n  sleep 60\n  done\nelse\n  echo \"no controller..skipping register\"\nfi\n}\nregister\n# start nginx\nsystemctl start nginx\necho \"done\"\nexit"
+                },
+                "name": "fidelity-nginx-czn9",
+                "networkInterfaces": [
+                    {
+                        "accessConfigs": [
+                            {
+                                "kind": "compute#accessConfig",
+                                "name": "external-nat",
+                                "natIP": "35.227.11.167",
+                                "networkTier": "PREMIUM",
+                                "type": "ONE_TO_ONE_NAT"
+                            }
+                        ],
+                        "fingerprint": "Z5qEBbNdFE8=",
+                        "kind": "compute#networkInterface",
+                        "name": "nic0",
+                        "network": {
+                            "name": "fidelityterraform-network-mgmt-relative-meerkat",
+                            "region": "global",
+                            "selfLink": "https://www.googleapis.com/compute/v1/projects/fidelity-ctl-demo/global/networks/fidelityterraform-network-mgmt-relative-meerkat"
+                        },
+                        "networkIP": "10.0.10.12",
+                        "subnetwork": {
+                            "name": "fidelitymgmt-sub-relative-meerkat",
+                            "region": "us-east1",
+                            "selfLink": "https://www.googleapis.com/compute/v1/projects/fidelity-ctl-demo/regions/us-east1/subnetworks/fidelitymgmt-sub-relative-meerkat"
+                        }
+                    }
+                ],
+                "project": "fidelity-ctl-demo",
+                "scheduling": {
+                    "automaticRestart": true,
+                    "onHostMaintenance": "MIGRATE",
+                    "preemptible": false
+                },
+                "selfLink": "https://www.googleapis.com/compute/v1/projects/fidelity-ctl-demo/zones/us-east1-b/instances/fidelity-nginx-czn9",
+                "serviceAccounts": [
+                    {
+                        "email": "gce-nginx-sa@fidelity-ctl-demo.iam.gserviceaccount.com",
+                        "scopes": [
+                            "https://www.googleapis.com/auth/cloud-platform"
+                        ]
+                    }
+                ],
+                "shieldedInstanceConfig": {
+                    "enableIntegrityMonitoring": true,
+                    "enableSecureBoot": false,
+                    "enableVtpm": true
+                },
+                "shieldedInstanceIntegrityPolicy": {
+                    "updateAutoLearnPolicy": true
+                },
+                "startRestricted": false,
+                "status": "RUNNING",
+                "tags": {
+                    "fingerprint": "s_OknvRIo8I=",
+                    "items": [
+                        "ctl-lb"
+                    ]
+                },
+                "zone": "us-east1-b",
+                "zone_selflink": "https://www.googleapis.com/compute/v1/projects/fidelity-ctl-demo/zones/us-east1-b"
+            }
+        }
+    }

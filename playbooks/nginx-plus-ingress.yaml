@@ -1,0 +1,25 @@
+---
+- name: Build NGINX Plus Image
+  hosts: controller
+  tasks:
+  - name: Git Clone Kubernete Ingress
+    git:
+      repo: https://github.com/nginxinc/kubernetes-ingress.git
+      dest: /tmp/kubernetes-ingress
+      version: release-1.9
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: Install Nginx Plus Repo certs
+    copy:
+      src: "{{ item }}"
+      dest: /tmp/kubernetes-ingress
+      mode: '0644'
+    with_fileglob:
+      - ../certs/nginx-repo*
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: Build NGINX Plus container
+    shell: "cd /tmp/kubernetes-ingress && make DOCKERFILE=DockerfileForPlus PREFIX=registry.{{ root_domain }}/nginx-plus-ingress"
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+    tags:
+    - ngx_image

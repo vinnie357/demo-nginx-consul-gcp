@@ -79,7 +79,7 @@ resource "google_compute_instance_group_manager" "nginx-group" {
   // depends_on         = [google_container_cluster.primary, google_compute_instance_group_manager.controller-group]
   depends_on         = [google_compute_instance_group_manager.nginx-controller-group]
   name               = "${var.projectPrefix}-nginx-instance-group-manager"
-  base_instance_name = "${var.projectPrefix}-nginx"
+  base_instance_name = "${var.projectPrefix}-nginx-lb"
   zone               = var.gcpZone
   target_size        = 1
   version {
@@ -95,7 +95,7 @@ resource "google_compute_instance_group_manager" "nginx-group-1" {
   // depends_on         = [google_container_cluster.primary, google_compute_instance_group_manager.controller-group]
   depends_on         = [google_compute_instance_group_manager.nginx-controller-group]
   name               = "${var.projectPrefix}-nginx-instance-group-manager-1"
-  base_instance_name = "${var.projectPrefix}-nginx-c"
+  base_instance_name = "${var.projectPrefix}-nginx-ctl"
   zone               = "${var.gcpRegion}-c"
   target_size        = 1
   version {
@@ -111,7 +111,7 @@ resource "google_compute_instance_group_manager" "nginx--ctlb-group" {
   // depends_on         = [google_container_cluster.primary, google_compute_instance_group_manager.controller-group]
   depends_on         = [google_compute_instance_group_manager.nginx-controller-group]
   name               = "${var.projectPrefix}-nginx-ctlb-instance-group-manager"
-  base_instance_name = "${var.projectPrefix}-nginx"
+  base_instance_name = "${var.projectPrefix}-nginx-lb"
   zone               = var.gcpZone
   target_size        = 1
   version {
@@ -127,7 +127,7 @@ resource "google_compute_instance_group_manager" "nginx-ctlb-group-1" {
   // depends_on         = [google_container_cluster.primary, google_compute_instance_group_manager.controller-group]
   depends_on         = [google_compute_instance_group_manager.nginx-controller-group]
   name               = "${var.projectPrefix}-nginx-ctlb-instance-group-manager-1"
-  base_instance_name = "${var.projectPrefix}-nginx-c"
+  base_instance_name = "${var.projectPrefix}-nginx-ctl"
   zone               = "${var.gcpRegion}-c"
   target_size        = 1
   version {

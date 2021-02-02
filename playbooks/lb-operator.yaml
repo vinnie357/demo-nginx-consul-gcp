@@ -1,0 +1,130 @@
+---
+- name: Unified Demo Setup - NGINX Load Balancer Operator
+  hosts: controller, ctl_lb
+  user: demoadmin
+  become: yes
+  tasks:
+
+#  - name: Gather Facts
+#    setup:
+#    delegate_to: "{{ item }}"
+#    delegate_facts: true
+#    with_items: "{{ groups['controller'] | intersect(groups['azure_loc_'+location]) | first }}"
+#    tags:
+#    - config
+#    - debug
+
+  - name: Debug Facts
+    debug:
+      msg: "{{ hostvars[item]['ansible_facts']['nodename'] }}"
+    with_items: "{{ groups['ctl_lb'] }}"
+    tags:
+    - debug
+
+
+  - name: Download Operator SDK
+    get_url:
+      url: https://github.com/operator-framework/operator-sdk/releases/download/v0.19.4/operator-sdk-v0.19.4-x86_64-linux-gnu
+      dest: /usr/local/bin/operator-sdk
+      mode: '07550'
+      force: yes
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: Download Ansible Operator SDK
+    get_url:
+      url: https://github.com/operator-framework/operator-sdk/releases/download/v0.19.4/ansible-operator-v0.19.4-x86_64-linux-gnu
+      dest: /usr/local/bin/ansible-operator
+      mode: '07550'
+      force: yes
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: Git Clone Kubernete Ingress
+    git:
+      repo: https://github.com/TuxInvader/nginx-lb-operator.git
+      dest: /tmp/nginx-lb-operator
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: Build Operator
+    shell: operator-sdk build registry.{{ root_domain }}/nginx/nginx-lb-operator:latest
+    args:
+      chdir: /tmp/nginx-lb-operator
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: Push Operator Image
+    shell: docker image push registry.{{ root_domain }}/nginx/nginx-lb-operator:latest
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+    tags:
+    - push
+
+
+
+  - name: Deploy CRDs
+    shell: |
+      kubectl apply -f deploy/crds/lb.nginx.com_controllers_crd.yaml
+      kubectl apply -f deploy/crds/lb.nginx.com_applications_crd.yaml
+      kubectl apply -f deploy/crds/lb.nginx.com_certificates_crd.yaml
+      kubectl apply -f deploy/crds/lb.nginx.com_components_crd.yaml
+      kubectl apply -f deploy/crds/lb.nginx.com_gateways_crd.yaml
+    args:
+      chdir: /tmp/nginx-lb-operator
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+    tags:
+    - crds
+
+  - name: Deploy Cluster Mainfests
+    shell: |
+      kubectl -n nginx-ingress apply -f deploy/namespace/service_account.yaml
+      kubectl -n nginx-ingress apply -f deploy/namespace/role.yaml
+      kubectl -n nginx-ingress apply -f deploy/namespace/role_binding.yaml
+    args:
+      chdir: /tmp/nginx-lb-operator
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+    tags:
+    - cluster
+
+  - name: Build LB Operator Deployment
+    template:
+      src: ../templates/lb-operator_deployment.yaml
+      dest: /tmp/lb-operator_deployment.yaml
+      mode: "0644"
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+    tags:
+    - deployment
+
+  - name: Deploy LB Operator
+    shell: kubectl -n nginx-ingress apply -f /tmp/lb-operator_deployment.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+    tags:
+    - deployment
+
+  - name: Build LB Operator Config
+    template:
+      src: ../templates/lb-operator_config.yaml
+      dest: /tmp/lb-operator_config.yaml
+      mode: "0644"
+      lstrip_blocks: no
+      trim_blocks: no
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+    tags:
+    - config
+
+  - name: Config LB Operator
+    shell: kubectl -n nginx-ingress apply -f /tmp/lb-operator_config.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+    tags:
+    - config
+
+  - name: Copy Component/App Config
+    copy:
+      src: ../configs/kube/controller_app.yaml
+      dest: /tmp/controller_app.yaml
+      mode: '0600'
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+    tags:
+    - app
+
+  - name: Deploy Copy Component/App Config
+    shell: kubectl -n nginx-ingress apply -f /tmp/controller_app.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+    tags:
+    - app

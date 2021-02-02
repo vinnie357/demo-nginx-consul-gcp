@@ -1,0 +1,78 @@
+---
+- name: Install K8S Dependancies
+  package:
+    name:
+    - git
+    - python-pip
+    state: latest
+
+- name: Install Helm
+  script: ../scripts/get-helm.sh
+
+- name: Install Python Dependancies
+  pip:
+    name:
+    - setuptools
+    - pyhelm
+    - grpcio
+
+- name: Cert Key
+  shell: kubeadm certs certificate-key
+  register: kube_cert_key
+
+- name: Save Cert Key
+  local_action:
+    module: copy
+    content: "{ 'kube_cert_key': '{{ kube_cert_key.stdout }}' }"
+    dest: "../configs/kube/{{ location }}_cert_key.json"
+
+- name: K8S Init
+  shell: |
+    kubeadm init \
+    --control-plane-endpoint 'k8s-api.{{ location }}.{{ root_domain }}:6443' \
+    --upload-certs \
+    --certificate-key {{ kube_cert_key.stdout }} \
+    --pod-network-cidr=10.244.0.0/16
+
+- name: Remove stale kubectl Config
+  file:
+    path: /root/.kube/config
+    state: absent
+
+- name: Make Kubectl Config dir
+  file:
+    path: /root/.kube
+    state: directory
+    mode: '0700'
+
+- name: Copy kubectl Config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    remote_src: yes
+    dest: /root/.kube/config
+    mode: '0600'
+
+- name: Copy Flannel Manifest
+  copy:
+    src: ../configs/kube/kube-flannel.yaml
+    dest: /tmp/kube-flannel.yaml
+    mode: '0600'
+
+- name: Apply Flannel Manifest
+  shell: kubectl apply -f /tmp/kube-flannel.yaml
+
+#- name: Apply Tigera Calico Operator Manifest
+#  shell: kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+
+#- name: Apply Canal Manifest
+#  shell: kubectl create -f https://docs.projectcalico.org/manifests/canal.yaml
+
+- name: Create Token
+  shell: kubeadm token create --print-join-command
+  register: kube_token
+
+- name: Save Token
+  local_action:
+    module: copy
+    content: "{ 'kube_join_command': '{{ kube_token.stdout }}' }"
+    dest: "../configs/kube/{{ location }}_token.json"

@@ -1,0 +1,15 @@
+---
+- name: Get Token
+  include_vars:
+    file: "../configs/kube/{{ location }}_token.json"
+
+- name: Get Cert Key
+  include_vars:
+    file: "../configs/kube/{{ location }}_cert_key.json"
+
+- name: K8S Token Debug
+  debug:
+    msg: "{{ kube_join_command }} --control-plane --certificate-key {{ kube_cert_key}}"
+
+- name: Joining K8S as a Controller Node
+  shell: "{{ kube_join_command }} --control-plane --certificate-key {{ kube_cert_key}}"

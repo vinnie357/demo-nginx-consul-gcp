@@ -1,0 +1,18 @@
+---
+- name: Unified Demo Setup - K8S Worker
+  hosts: worker
+  user: demoadmin
+  become: yes
+  tasks:
+  - name: Base K8S dependecies
+    include: k8s-dependancies.yaml
+
+  - name: K8S Reset
+    shell: kubeadm reset -f
+
+  - name: Get Token
+    include_vars:
+      file: "../configs/kube/{{ location }}_token.json"
+
+  - name: Joining K8S as a Worker Node
+    shell: "{{ kube_join_command }}"

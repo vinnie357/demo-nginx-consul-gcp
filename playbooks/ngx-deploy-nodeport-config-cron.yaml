@@ -1,0 +1,40 @@
+---
+- name: Deploy Cron for configuring NGINX for NodePorts
+  hosts: citi_lb
+  become: yes
+  tasks:
+
+  - name: Install Deps
+    package:
+      name:
+      - python3
+      - python3-pip
+
+  - name: install Ansible
+    pip:
+      name:
+      - ansible
+      executable: pip3
+
+  - name: Make Playbook dir
+    file:
+      path: /opt/nginx-nodeport
+      state: directory
+      mode: '0755'
+
+  - name: Copy playbook into place
+    copy:
+      src: ../playbooks/ngx-nodeport-config.yaml
+      dest: /opt/nginx-nodeport/
+      mode: '0644'
+
+  - name: Copy config template into place
+    copy:
+      src: ../templates/nodePorts.conf
+      dest: /opt/nginx-nodeport/
+      mode: '0644'
+
+  - name: Setup cronjob
+    cron:
+      name: NGINX Plus NodePort Configurator
+      job: "/usr/local/bin/ansible-playbook /opt/nginx-nodeport/ngx-nodeport-config.yaml"

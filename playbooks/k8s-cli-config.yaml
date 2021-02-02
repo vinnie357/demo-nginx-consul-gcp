@@ -1,0 +1,30 @@
+---
+- name: kube config
+  hosts: citi_lb
+  become: yes
+  tasks:
+
+  - name: Set Region
+    set_fact:
+      region: "{{ item.split('-')[1][:-1]}}"
+    with_items:
+    - "{{ hostvars[inventory_hostname].ansible_domain.split('.') | first }}"
+    tags:
+    - debug
+
+  - name: Set Tokens
+    set_fact:
+      tokens:
+        east: S8oIG-KnYwP-V3Zuu-pA7mu
+        west: 5NpNR-Uvgtg-nLfs3-98PTZ
+    tags:
+    - debug
+
+  - name: Debug Token
+    debug:
+      msg: "{{ tokens[region] }} -- {{ region }}"
+    tags:
+    - debug
+
+  - name: Get kubeconfig
+    shell: "oc login -u kubeadmin -p {{ tokens[region] }} --insecure-skip-tls-verify=true --server=https://api.citi-poc-{{ region }}.nginxplus.org:6443"

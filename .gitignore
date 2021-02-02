@@ -1,6 +1,8 @@
 # custom
 admin.auto.tfvars
-
+serviceaccount.json
+*.pem
+controller_license.txt
 # Local .terraform directories
 **/.terraform/*
 
@@ -30,3 +32,5 @@ override.tf.json
 
 # Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
 # example: *tfplan*
+
+controller/controller_license.txt

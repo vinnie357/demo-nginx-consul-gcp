@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: storage
+
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: glusterfs-cluster
+  namespace: storage
+subsets:
+{% for host in groups['storage'] -%}
+{% if hostvars[host]['location'] == location -%}
+- addresses:
+  - ip: {{ hostvars[host]['private_ipv4_addresses'][0] }}
+  ports:
+  - port: 24007
+{% endif %}
+{% endfor %}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: glusterfs-cluster
+  namespace: storage
+spec:
+  ports:
+  - port: 24007

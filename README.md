@@ -42,21 +42,6 @@ Other open source options include Registrator from Glider Labs and ContainerPilo
   - https://learn.hashicorp.com/tutorials/consul/load-balancing-nginx
 
 ### variables
+<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 
-```hcl
-projectPrefix     = "demonginx"
-gcpProjectId      = "myprojectid"
-gcpRegion         = "us-east1"
-gcpZone           = "us-east1-b"
-nginxKey          = "198rt9de8fu"
-nginxCert         = "fdsfjsakdf"
-adminAccount      = "notadmin"
-adminPass         = "pleaseusevault"
-adminSrcAddr      = ["192.168.1.2/32", "102.67.2.5/32"]
-controllerBucket  = "my-bucket"
-controllerLicense = "mylicensetext"
-controllerAccount = "myemail@domain.com"
-controllerPass    = "pleaseusevault"
-dbPass            = "pleaseusevault"
-dbUser            = "mydbuser"
-```
+<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->

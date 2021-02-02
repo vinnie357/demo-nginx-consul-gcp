@@ -50,7 +50,7 @@ resource "google_compute_instance_group_manager" "storage-group" {
   name               = "${var.projectPrefix}-storage-instance-group-manager"
   base_instance_name = "${var.projectPrefix}-storage"
   zone               = var.gcpZone
-  target_size        = 1
+  target_size        = 2
   version {
     instance_template = google_compute_instance_template.storage-template.id
   }

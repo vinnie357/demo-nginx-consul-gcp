@@ -1,0 +1,38 @@
+---
+apiVersion: lb.nginx.com/v1alpha1
+kind: Application
+metadata:
+  namespace: nginx-ingress
+  name: nginx-ingress
+spec:
+  controller: demo-controller
+  displayName: "NGINX KIC"
+  description: "NGINX K8S Ingress Conroller"
+
+---
+apiVersion: lb.nginx.com/v1alpha1
+kind: Component
+metadata:
+  name: nginx-ingress
+  namespace: nginx-ingress
+spec:
+  controller: demo-controller
+  application: nginx-ingress
+  ingressType: Service
+  ingressName: nginx-ingress
+  ingressNamespace: nginx-ingress
+  gateway: "my-gateway"
+  workload:
+    scheme: "http"
+    path: "/"
+    targetPort: 80
+  desiredState:
+    ingress:
+      uris:
+        /: {}
+    backend:
+      workloadGroups:
+        # group uris will be populated from "ingress" pods or nodeports
+        group:
+          loadBalancingMethod:
+            type: ROUND_ROBIN

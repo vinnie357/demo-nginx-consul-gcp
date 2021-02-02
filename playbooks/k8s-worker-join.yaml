@@ -1,0 +1,20 @@
+---
+- name: K8S Join
+  user: demoadmin
+  hosts: azure_loc_{{ target_location }}:&worker
+  become: yes
+  tasks:
+
+  - name: K8S Reset
+    shell: kubeadm reset -f
+
+  - name: Get Token
+    include_vars:
+      file: "../configs/kube/{{ location }}_token.json"
+
+  - name: K8S Token Debug
+    debug:
+      var: kube_join_command
+
+  - name: Joining K8S as a Worker Node
+    shell: "{{ kube_join_command }}"

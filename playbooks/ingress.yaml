@@ -1,0 +1,64 @@
+---
+- name: Unified Demo Setup - KIC
+  hosts: controller
+  user: demoadmin
+  become: yes
+  tasks:
+  - name: common - ns and sa
+    shell: kubectl apply -f /tmp/kubernetes-ingress/deployments/common/ns-and-sa.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: common - gc definition
+    shell: kubectl apply -f /tmp/kubernetes-ingress/deployments/common/gc-definition.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: common - global config
+    shell: kubectl apply -f /tmp/kubernetes-ingress/deployments/common/global-configuration.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: common - ts definition
+    shell: kubectl apply -f /tmp/kubernetes-ingress/deployments/common/ts-definition.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: common - vs definition
+    shell: kubectl apply -f /tmp/kubernetes-ingress/deployments/common/vs-definition.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: common - vsr definition
+    shell: kubectl apply -f /tmp/kubernetes-ingress/deployments/common/vsr-definition.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: common - default server secert
+    shell: kubectl apply -f /tmp/kubernetes-ingress/deployments/common/default-server-secret.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: common - nginx config
+    shell: kubectl apply -f /tmp/kubernetes-ingress/deployments/common/nginx-config.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: common - policy definition
+    shell: kubectl apply -f /tmp/kubernetes-ingress/deployments/common/policy-definition.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: common - ingress class
+    shell: kubectl apply -f /tmp/kubernetes-ingress/deployments/common/ingress-class.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: Build Ingress Deployment Manifest
+    template:
+      src: ../templates/nginx-plus-ingress.yaml
+      dest: /tmp/nginx-plus-ingress.yaml
+      mode: '0600'
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: rbac
+    shell: kubectl apply -f /tmp/kubernetes-ingress/deployments/rbac/rbac.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: deployment - ingress
+    shell: kubectl apply -f /tmp/nginx-plus-ingress.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first
+
+  - name: service - node port
+    shell: kubectl apply -f /tmp/kubernetes-ingress/deployments/service/nodeport.yaml
+    when: inventory_hostname == groups['controller'] | intersect(groups['azure_loc_'+location]) | first

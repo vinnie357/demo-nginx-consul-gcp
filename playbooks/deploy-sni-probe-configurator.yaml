@@ -1,0 +1,40 @@
+---
+- name: Deploy Cron for SNI Probes
+  hosts: 35.227.6.168
+  become: yes
+  tasks:
+
+  - name: Make SNI Probe dir
+    file:
+      path: /opt/nginx-sniprobe
+      state: directory
+      mode: '0755'
+
+  - name: Copy SNI Probe Lib
+    copy:
+      src: ../templates/sniprobe.sh
+      dest: /opt/nginx-sniprobe/sniprobe.sh
+      mode: '0755'
+
+  - name: Copy SNI Probe Template
+    copy:
+      src: ../templates/sniprobe.sh
+      dest: /opt/nginx-sniprobe/sniprobe.sh
+      mode: '0755'
+
+  - name: Copy SNI Probe Template
+    copy:
+      src: ../templates/cron-sniprobe.sh
+      dest: /opt/nginx-sniprobe/cron-sniprobe.sh
+      mode: '0755'
+
+  - name: Copy SNI Probe Playbook
+    copy:
+      src: ../playbooks/sni-probe-configurator.yaml
+      dest: /opt/nginx-sniprobe/sni-probe-configurator.yaml
+      mode: '0644'
+
+  - name: Setup cronjob
+    cron:
+      name: NGINX Plus SNI Probe Configurator
+      job: "/usr/local/bin/ansible-playbook /opt/nginx-sniprobe/sni-probe-configurator.yaml"

@@ -1,0 +1,113 @@
+- name: Remove Unneeded Docker Packages
+  package:
+    name:
+    - docker
+    - docker-engine
+    - docker.io
+    - containerd
+    - runc
+    state: absent
+
+- name: Add Docker Dependancies
+  package:
+    name:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg-agent
+    - software-properties-common
+    - jq
+    state: latest
+
+- name: Install Docker apt key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Install Kubernetes apt key
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+
+- name: Add Docker Repo
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+    state: present
+
+- name: Add Glusterfs apt key
+  apt_key:
+    url: https://download.gluster.org/pub/gluster/glusterfs/7/rsa.pub
+    state: present
+  tags:
+  - gluster
+
+- name: Add Glusterfs apt repo
+  apt_repository:
+    repo: ppa:gluster/glusterfs-7
+    state: present
+  tags:
+  - gluster
+
+- name: Install Glusterfs packages
+  package:
+    name:
+    - glusterfs-client
+  tags:
+  - gluster
+
+- name: Add Docker Packages
+  package:
+    name:
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+    state: latest
+
+- name: Install Docker daemon config
+  copy:
+    src: ../configs/docker/daemon.json
+    dest: /etc/docker
+    mode: '0644'
+
+#- name: Copy Calico Config
+#  copy:
+#    src: ../configs/kube/calico.conf
+#    dest: /etc/NetworkManager/conf.d/calico.conf
+#    mode: '0644'
+
+#- name: Restart NetworkManager Service
+#  service:
+#    name: NetworkManager
+#    state: restarted
+
+- name: Restart Docker Service
+  service:
+    name: docker
+    state: restarted
+
+- name: Turn On IP Forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    sysctl_set: yes
+    state: present
+    reload: yes
+
+- name: Add K8S Repo
+  apt_repository:
+    repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+    state: present
+
+- name: Install K8S Dependancies
+  package:
+    name:
+    - kubeadm
+    - kubectl
+    - kubelet
+    state: latest
+
+- name: Add the user 'demoadmin' to 'docker' group
+  user:
+    name: demoadmin
+    groups: docker
+    append: yes

@@ -87,7 +87,7 @@ resource "google_compute_instance_group_manager" "k8scontroller-group" {
   name               = "${var.projectPrefix}-k8scontroller-instance-group-manager"
   base_instance_name = "${var.projectPrefix}-k8scontroller"
   zone               = var.gcpZone
-  target_size        = 1
+  target_size        = 2
   version {
     instance_template = google_compute_instance_template.k8scontroller-template.id
   }
@@ -119,7 +119,7 @@ resource "google_compute_instance_group_manager" "k8sworker-group" {
   name               = "${var.projectPrefix}-k8sworker-instance-group-manager"
   base_instance_name = "${var.projectPrefix}-k8sworker"
   zone               = var.gcpZone
-  target_size        = 1
+  target_size        = 3
   version {
     instance_template = google_compute_instance_template.k8sworker-template.id
   }
@@ -135,7 +135,7 @@ resource "google_compute_instance_group_manager" "k8sworker-group-1" {
   name               = "${var.projectPrefix}-k8sworker-instance-group-manager-1"
   base_instance_name = "${var.projectPrefix}-k8sworker-c"
   zone               = "${var.gcpRegion}-c"
-  target_size        = 1
+  target_size        = 2
   version {
     instance_template = google_compute_instance_template.k8sworker-template.id
   }

@@ -1,0 +1,56 @@
+---
+- name: Unified Demo Setup - Controller Load Balancers
+  hosts: ctl_lb
+  user: demoadmin
+  become: yes
+  tasks:
+
+  - name: Login
+    uri:
+      url: https://controller/api/v1/platform/login
+      method: POST
+      body: "{\"credentials\": {\"type\": \"BASIC\",\"username\": \"admin@{{ root_domain }}\",\"password\": \"chang3m3\"}}"
+      validate_certs: no
+      status_code: [204]
+      body_format: json
+    register: login
+    tags:
+    - login
+    - environment
+    run_once: yes
+
+  - name: Get Global Settings
+    uri:
+      url: https://controller/api/v1/platform/global
+      headers:
+        Cookie: "{{ login.cookies_string }}"
+      method: GET
+      validate_certs: no
+      status_code: 200
+      body_format: json
+    register: global_settings
+    run_once: yes
+
+  - name: Add LB to Controller
+    shell: "curl -sS -L -k  https://controller.{{ location }}.{{ root_domain }}:8443/1.4/install/controller/ > install.sh && API_KEY='{{ global_settings['json']['desiredState']['agentSettings']['apiKey'] }}' sh ./install.sh -y -l kic-{{ location }}"
+    args:
+      chdir: /tmp
+    tags:
+    - install
+
+
+  - name: Enable Nginx Controller Service
+    service:
+      name: controller-agent
+      state: restarted
+      enabled: yes
+    tags:
+    - start
+
+  - name: Enable Nginx Service
+    service:
+      name: nginx
+      state: restarted
+      enabled: yes
+    tags:
+    - start
