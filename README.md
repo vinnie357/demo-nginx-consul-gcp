@@ -9,13 +9,13 @@ nginx k8s consul in gke
 
 - Controller
   - license file
-  
+
     [trial license](https://www.nginx.com/free-trial-request-nginx-controller/)
 
 - Nginx plus
   - cert
   - key
-  
+
     [trial keys](https://www.nginx.com/free-trial-request/)
 
 ## Workflow
@@ -43,5 +43,50 @@ Other open source options include Registrator from Glider Labs and ContainerPilo
 
 ### variables
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+## Requirements
+
+No requirements.
+
+## Providers
+
+| Name | Version |
+|------|---------|
+| google | n/a |
+| null | n/a |
+| random | n/a |
+| template | n/a |
+| tls | n/a |
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| adminAccount | admin account | `any` | n/a | yes |
+| adminPass | admin password | `any` | n/a | yes |
+| adminSrcAddr | admin src address in cidr | `any` | n/a | yes |
+| baseDomain | The root DNS name | `string` | n/a | yes |
+| controllerAccount | name of controller admin account | `string` | `"admin"` | no |
+| controllerLicense | license for controller | `string` | `"none"` | no |
+| controllerPass | pass of controller admin account | `string` | `"admin123!"` | no |
+| dbPass | pass of controller admin account | `string` | `"naaspassword"` | no |
+| dbUser | pass of controller admin account | `string` | `"naas"` | no |
+| gcpProjectId | gcp project id | `any` | n/a | yes |
+| gcpRegion | region where gke is deployed | `any` | n/a | yes |
+| gcpZone | zone where gke is deployed | `any` | n/a | yes |
+| gkeVersion | https://cloud.google.com/kubernetes-engine/docs/release-notes-regular https://cloud.google.com/kubernetes-engine/versioning-and-upgrades gcloud container get-server-config --region us-east1 | `string` | `"1.18.14-gke.1200"` | no |
+| nginx-controllerBucket | name of controller installer bucket | `string` | `"none"` | no |
+| nginxCert | cert for nginxplus | `any` | n/a | yes |
+| nginxKey | key for nginxplus | `any` | n/a | yes |
+| nginxPublicKey | admin public key | `any` | n/a | yes |
+| podCidr | k8s pod cidr | `string` | `"10.56.0.0/14"` | no |
+| projectPrefix | prefix for resources | `any` | n/a | yes |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| jumphost | jumphost |
+| jumphost-group-info | jumphost group |
 
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->

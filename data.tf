@@ -13,7 +13,7 @@ data "template_file" "ssh_cfg" {
   ]
   vars = {
     jumphost-name = data.google_compute_instance.jumphost.name,
-    jumphost-ip = data.google_compute_instance.jumphost.network_interface[0].access_config[0].nat_ip
+    jumphost-ip   = data.google_compute_instance.jumphost.network_interface[0].access_config[0].nat_ip
   }
 }
 

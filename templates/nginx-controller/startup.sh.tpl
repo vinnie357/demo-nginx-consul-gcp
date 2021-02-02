@@ -69,7 +69,7 @@ tar xzf /$file
 cd controller-installer
 #local_ipv4="$(curl -s -f --retry 20 'http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip' -H 'Metadata-Flavor: Google')"
 echo "controller dowloaded" >> /status.log
-# k8s dependencies 
+# k8s dependencies
 KUBE_VERSION=1.15.5
 packages=(
     "kubeadm=$${KUBE_VERSION}-00"
@@ -202,7 +202,7 @@ EOF
 )
 echo $envPayload | jq .
 curl -sk --header "Content-Type:application/json" --header "Cookie: $cookie" --data "$envPayload" --url https://$ip/$version$environmentsUri
-done 
+done
 }
 environments
 echo "done" >> /status.log

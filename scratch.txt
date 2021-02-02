@@ -1,0 +1,8 @@
+  lb: "'lb' == tags.type"
+  jumphost: "'jumphost' == tags.type"
+  worker: "'k8s_worker_node' == tags.type"
+  controller: "'k8s_controller_node' == tags.type"
+  internal_dns: "'internal_dns' == tags.type"
+  storage: "'storage' == tags.type"
+  ctl_lb: "'ctl_lb' == tags.type"
+  ngx_controller: "'controller' == tags.type"
